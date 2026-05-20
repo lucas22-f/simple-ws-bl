@@ -2,7 +2,7 @@
 
 vi.mock("server-only", () => ({}));
 
-import { createProductAction, updateProductAction } from "@/server/admin/actions/products";
+import { archiveProductAction, createProductAction, updateProductAction } from "@/server/admin/actions/products";
 import { updateOrderFulfillmentStatusAction, type OrdersRepository } from "@/server/admin/actions/orders";
 import { updateSettingsAction } from "@/server/admin/actions/settings";
 import { buildProductImagePath } from "@/server/admin/storage";
@@ -62,6 +62,16 @@ describe("admin product actions", () => {
     await expect(updateProductAction("550e8400-e29b-41d4-a716-446655440000", { name: "Yerbera", slug: "yerbera", description: "", priceCents: 5000 }, { repository, assertAdmin: allowAdmin }))
       .resolves.toMatchObject({ id: "550e8400-e29b-41d4-a716-446655440000", name: "Yerbera" });
     await expect(updateProductAction("bad/id", { name: "Yerbera", slug: "yerbera", priceCents: 5000 }, { repository, assertAdmin: allowAdmin })).rejects.toThrow("ID de producto inválido");
+  });
+
+  it("archives products by validated id", async () => {
+    const repository = { archiveProduct: vi.fn(async (id) => ({ id, active: false })) };
+
+    await expect(archiveProductAction("550e8400-e29b-41d4-a716-446655440000", { repository, assertAdmin: allowAdmin }))
+      .resolves.toEqual({ id: "550e8400-e29b-41d4-a716-446655440000", active: false });
+    await expect(archiveProductAction("bad/id", { repository, assertAdmin: allowAdmin })).rejects.toThrow("ID de producto inválido");
+
+    expect(repository.archiveProduct).toHaveBeenCalledOnce();
   });
 });
 

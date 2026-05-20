@@ -42,8 +42,29 @@ export type StorefrontProduct = {
   images: { storagePath: string; altText: string }[];
 };
 
+export type AdminProductRow = Pick<
+  ProductRow,
+  "id" | "name" | "slug" | "description" | "price_cents" | "currency" | "active" | "featured" | "stock_quantity"
+>;
+
+export type AdminProduct = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  priceCents: number;
+  currency: string;
+  active: boolean;
+  featured: boolean;
+  stockQuantity: number | null;
+};
+
 export type ProductQueryClient = {
   listProducts: (filters?: { search?: string; category?: string }) => Promise<{ data: ProductRow[] | null; error: unknown }>;
+};
+
+export type AdminProductQueryClient = {
+  listAdminProducts: () => Promise<{ data: AdminProductRow[] | null; error: unknown }>;
 };
 
 export const CATALOG_READ_ERROR_MESSAGE = "No pudimos cargar el catálogo. Probá de nuevo en unos minutos.";
@@ -92,6 +113,20 @@ export function mapProductRow(row: ProductRow): StorefrontProduct {
   };
 }
 
+export function mapAdminProductRow(row: AdminProductRow): AdminProduct {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    description: row.description,
+    priceCents: row.price_cents,
+    currency: row.currency,
+    active: row.active,
+    featured: row.featured,
+    stockQuantity: row.stock_quantity,
+  };
+}
+
 export function createSupabaseProductQueryClient(): ProductQueryClient {
   return {
     async listProducts(filters = {}) {
@@ -118,6 +153,21 @@ export function createSupabaseProductQueryClient(): ProductQueryClient {
 
       const { data, error } = await query;
       return { data: (data ?? null) as ProductRow[] | null, error };
+    },
+  };
+}
+
+export function createSupabaseAdminProductQueryClient(): AdminProductQueryClient {
+  return {
+    async listAdminProducts() {
+      const { createSupabaseAdminClient } = await import("@/server/supabase/admin");
+      const supabase = createSupabaseAdminClient();
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, slug, description, price_cents, currency, active, featured, stock_quantity")
+        .order("created_at", { ascending: false });
+
+      return { data: (data ?? null) as AdminProductRow[] | null, error };
     },
   };
 }
@@ -192,6 +242,17 @@ export async function getProductListState(options: { client?: ProductQueryClient
       message: CATALOG_READ_ERROR_MESSAGE,
     };
   }
+}
+
+export async function listAdminProducts(options: { client?: AdminProductQueryClient } = {}) {
+  const client = options.client ?? createSupabaseAdminProductQueryClient();
+  const { data, error } = await client.listAdminProducts();
+
+  if (error) {
+    throw new ProductCatalogReadError(error);
+  }
+
+  return (data ?? []).map(mapAdminProductRow);
 }
 
 export async function listFeaturedProducts(options: { client?: ProductQueryClient; limit?: number } = {}) {

@@ -1,8 +1,10 @@
 ﻿import { describe, expect, it } from "vitest";
 import {
+  listAdminProducts,
   getActiveProductBySlug,
   getProductListState,
   listActiveProducts,
+  type AdminProductQueryClient,
   ProductCatalogReadError,
   type ProductQueryClient,
 } from "@/server/products/queries";
@@ -98,6 +100,67 @@ describe("product storefront queries", () => {
     };
 
     await expect(getActiveProductBySlug("mate-camionero", { client })).rejects.toBeInstanceOf(ProductCatalogReadError);
+  });
+});
+
+describe("admin product queries", () => {
+  it("returns active and inactive products with admin management fields", async () => {
+    const client: AdminProductQueryClient = {
+      async listAdminProducts() {
+        return {
+          data: [
+            {
+              id: "550e8400-e29b-41d4-a716-446655440010",
+              name: "Mate camionero",
+              slug: "mate-camionero",
+              description: "Mate grande",
+              price_cents: 12500,
+              currency: "ARS",
+              active: true,
+              featured: true,
+              stock_quantity: 4,
+            },
+            {
+              id: "550e8400-e29b-41d4-a716-446655440011",
+              name: "Producto pausado",
+              slug: "producto-pausado",
+              description: "No publicado",
+              price_cents: 9900,
+              currency: "ARS",
+              active: false,
+              featured: false,
+              stock_quantity: null,
+            },
+          ],
+          error: null,
+        };
+      },
+    };
+
+    await expect(listAdminProducts({ client })).resolves.toEqual([
+      {
+        id: "550e8400-e29b-41d4-a716-446655440010",
+        name: "Mate camionero",
+        slug: "mate-camionero",
+        description: "Mate grande",
+        priceCents: 12500,
+        currency: "ARS",
+        active: true,
+        featured: true,
+        stockQuantity: 4,
+      },
+      {
+        id: "550e8400-e29b-41d4-a716-446655440011",
+        name: "Producto pausado",
+        slug: "producto-pausado",
+        description: "No publicado",
+        priceCents: 9900,
+        currency: "ARS",
+        active: false,
+        featured: false,
+        stockQuantity: null,
+      },
+    ]);
   });
 });
 
