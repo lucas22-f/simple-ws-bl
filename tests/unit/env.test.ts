@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createPublicEnv, createServerEnv, createSupabaseServerClientEnv } from "@/server/env";
+import { createPublicEnv, createServerEnv, createSupabaseAdminEnv, createSupabaseServerClientEnv } from "@/server/env";
 
 const validEnv = {
   NEXT_PUBLIC_SITE_URL: "http://localhost:3000",
@@ -72,5 +72,28 @@ describe("createSupabaseServerClientEnv", () => {
         NEXT_PUBLIC_SUPABASE_URL: validEnv.NEXT_PUBLIC_SUPABASE_URL,
       }),
     ).toThrow(/Invalid Supabase server configuration: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/);
+  });
+});
+
+describe("createSupabaseAdminEnv", () => {
+  it("validates only the Supabase URL and service role key needed by admin data access", () => {
+    expect(
+      createSupabaseAdminEnv({
+        NEXT_PUBLIC_SUPABASE_URL: validEnv.NEXT_PUBLIC_SUPABASE_URL,
+        SUPABASE_SECRET_KEY: validEnv.SUPABASE_SECRET_KEY,
+      }),
+    ).toEqual({
+      NEXT_PUBLIC_SUPABASE_URL: validEnv.NEXT_PUBLIC_SUPABASE_URL,
+      SUPABASE_SECRET_KEY: validEnv.SUPABASE_SECRET_KEY,
+    });
+  });
+
+  it("does not require Mercado Pago secrets for Supabase admin access", () => {
+    expect(() =>
+      createSupabaseAdminEnv({
+        NEXT_PUBLIC_SUPABASE_URL: validEnv.NEXT_PUBLIC_SUPABASE_URL,
+        SUPABASE_SECRET_KEY: validEnv.SUPABASE_SECRET_KEY,
+      }),
+    ).not.toThrow();
   });
 });

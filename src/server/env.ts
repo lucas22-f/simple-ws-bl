@@ -19,9 +19,16 @@ const supabaseServerClientEnvSchema = publicEnvSchema.pick({
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: true,
 });
 
+const supabaseAdminEnvSchema = publicEnvSchema.pick({
+  NEXT_PUBLIC_SUPABASE_URL: true,
+}).extend({
+  SUPABASE_SECRET_KEY: z.string().min(1),
+});
+
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 export type SupabaseServerClientEnv = z.infer<typeof supabaseServerClientEnvSchema>;
+export type SupabaseAdminEnv = z.infer<typeof supabaseAdminEnvSchema>;
 
 function formatEnvError(error: z.ZodError) {
   return error.issues.map((issue) => issue.path.join(".")).join(", ");
@@ -59,6 +66,16 @@ export function createSupabaseServerClientEnv(
   return parsed.data;
 }
 
+export function createSupabaseAdminEnv(rawEnv: Record<string, string | undefined>): SupabaseAdminEnv {
+  const parsed = supabaseAdminEnvSchema.safeParse(rawEnv);
+
+  if (!parsed.success) {
+    throw new Error(`Invalid Supabase admin configuration: ${formatEnvError(parsed.error)}`);
+  }
+
+  return parsed.data;
+}
+
 export function getPublicEnv() {
   return createPublicEnv(process.env);
 }
@@ -69,4 +86,8 @@ export function getServerEnv() {
 
 export function getSupabaseServerClientEnv() {
   return createSupabaseServerClientEnv(process.env);
+}
+
+export function getSupabaseAdminEnv() {
+  return createSupabaseAdminEnv(process.env);
 }
