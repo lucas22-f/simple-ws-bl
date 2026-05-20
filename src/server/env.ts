@@ -14,8 +14,14 @@ const serverEnvSchema = publicEnvSchema.extend({
   MP_WEBHOOK_SECRET: z.string().min(1),
 });
 
+const supabaseServerClientEnvSchema = publicEnvSchema.pick({
+  NEXT_PUBLIC_SUPABASE_URL: true,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: true,
+});
+
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
+export type SupabaseServerClientEnv = z.infer<typeof supabaseServerClientEnvSchema>;
 
 function formatEnvError(error: z.ZodError) {
   return error.issues.map((issue) => issue.path.join(".")).join(", ");
@@ -41,10 +47,26 @@ export function createServerEnv(rawEnv: Record<string, string | undefined>): Ser
   return parsed.data;
 }
 
+export function createSupabaseServerClientEnv(
+  rawEnv: Record<string, string | undefined>,
+): SupabaseServerClientEnv {
+  const parsed = supabaseServerClientEnvSchema.safeParse(rawEnv);
+
+  if (!parsed.success) {
+    throw new Error(`Invalid Supabase server configuration: ${formatEnvError(parsed.error)}`);
+  }
+
+  return parsed.data;
+}
+
 export function getPublicEnv() {
   return createPublicEnv(process.env);
 }
 
 export function getServerEnv() {
   return createServerEnv(process.env);
+}
+
+export function getSupabaseServerClientEnv() {
+  return createSupabaseServerClientEnv(process.env);
 }

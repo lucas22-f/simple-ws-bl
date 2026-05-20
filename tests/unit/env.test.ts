@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createPublicEnv, createServerEnv } from "@/server/env";
+import { createPublicEnv, createServerEnv, createSupabaseServerClientEnv } from "@/server/env";
 
 const validEnv = {
   NEXT_PUBLIC_SITE_URL: "http://localhost:3000",
@@ -23,6 +23,16 @@ describe("createServerEnv", () => {
       }),
     ).toThrow(/Invalid server configuration: MP_ACCESS_TOKEN/);
   });
+
+  it("still requires Mercado Pago secrets for full server configuration", () => {
+    expect(() =>
+      createServerEnv({
+        ...validEnv,
+        MP_ACCESS_TOKEN: undefined,
+        MP_WEBHOOK_SECRET: undefined,
+      }),
+    ).toThrow(/Invalid server configuration: MP_ACCESS_TOKEN, MP_WEBHOOK_SECRET/);
+  });
 });
 
 describe("createPublicEnv", () => {
@@ -40,5 +50,27 @@ describe("createPublicEnv", () => {
       NEXT_PUBLIC_META_PIXEL_ID: undefined,
       NEXT_PUBLIC_GTM_ID: undefined,
     });
+  });
+});
+
+describe("createSupabaseServerClientEnv", () => {
+  it("validates only the public Supabase values needed by the SSR auth client", () => {
+    expect(
+      createSupabaseServerClientEnv({
+        NEXT_PUBLIC_SUPABASE_URL: validEnv.NEXT_PUBLIC_SUPABASE_URL,
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: validEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      }),
+    ).toEqual({
+      NEXT_PUBLIC_SUPABASE_URL: validEnv.NEXT_PUBLIC_SUPABASE_URL,
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: validEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    });
+  });
+
+  it("throws a narrow Supabase error when a required Supabase value is missing", () => {
+    expect(() =>
+      createSupabaseServerClientEnv({
+        NEXT_PUBLIC_SUPABASE_URL: validEnv.NEXT_PUBLIC_SUPABASE_URL,
+      }),
+    ).toThrow(/Invalid Supabase server configuration: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/);
   });
 });
