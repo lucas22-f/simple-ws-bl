@@ -5,6 +5,10 @@ node_modules/
 .next/
 out/
 
+# deployment/tooling
+.vercel/
+.turbo/
+
 # production
 build/
 dist/
@@ -21,6 +25,9 @@ test-results/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# supabase local state
+supabase/.temp/
 
 # logs
 npm-debug.log*
