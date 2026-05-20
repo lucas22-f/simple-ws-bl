@@ -1,17 +1,20 @@
-﻿import { createSupabaseServerClient } from "@/server/supabase/server";
+import { loginAction } from "@/server/admin/actions/login";
+import { resolveAdminLoginNextPath } from "@/server/admin/actions/login-path";
 
-async function login(formData: FormData) {
-  "use server";
-  const email = String(formData.get("email") ?? "");
-  const password = String(formData.get("password") ?? "");
-  const supabase = await createSupabaseServerClient();
-  await supabase.auth.signInWithPassword({ email, password });
-}
+type AdminLoginPageProps = {
+  searchParams?: Promise<{
+    next?: string | string[];
+  }>;
+};
 
-export default function AdminLoginPage() {
+export default async function AdminLoginPage({ searchParams }: AdminLoginPageProps) {
+  const params = await searchParams;
+  const nextPath = resolveAdminLoginNextPath(params?.next);
+
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <form action={login} className="space-y-4 rounded-3xl border bg-white p-6 shadow-sm">
+      <form action={loginAction} className="space-y-4 rounded-3xl border bg-white p-6 shadow-sm">
+        <input name="next" type="hidden" value={nextPath} />
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-stone-500">Admin</p>
           <h1 className="text-2xl font-bold text-stone-950">Ingresar</h1>
@@ -23,4 +26,3 @@ export default function AdminLoginPage() {
     </main>
   );
 }
-
