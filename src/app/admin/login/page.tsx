@@ -1,4 +1,5 @@
-import { loginAction } from "@/server/admin/actions/login";
+import { NavigationLink } from "@/components/ui/navigation-link";
+import { AdminLoginForm } from "@/app/admin/login/admin-login-form";
 import { resolveAdminLoginNextPath } from "@/server/admin/actions/login-path";
 
 type AdminLoginPageProps = {
@@ -12,17 +13,17 @@ export default async function AdminLoginPage({ searchParams }: AdminLoginPagePro
   const nextPath = resolveAdminLoginNextPath(params?.next);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <form action={loginAction} className="space-y-4 rounded-3xl border bg-white p-6 shadow-sm">
-        <input name="next" type="hidden" value={nextPath} />
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-stone-500">Admin</p>
-          <h1 className="text-2xl font-bold text-stone-950">Ingresar</h1>
-        </div>
-        <label className="block text-sm font-medium">Email<input className="mt-1 w-full rounded-xl border px-3 py-2" name="email" type="email" required /></label>
-        <label className="block text-sm font-medium">Password<input className="mt-1 w-full rounded-xl border px-3 py-2" name="password" type="password" required /></label>
-        <button className="w-full rounded-xl bg-stone-950 px-4 py-2 font-semibold text-white" type="submit">Entrar</button>
-      </form>
+    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 px-6">
+      <NavigationLink
+        href="/"
+        className="w-fit text-sm font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        pendingTitle="Cargando tienda"
+        pendingDescription="Volvemos a la experiencia pública de compra."
+      >
+        Volver a la tienda
+      </NavigationLink>
+
+      <AdminLoginForm nextPath={nextPath} />
     </main>
   );
 }

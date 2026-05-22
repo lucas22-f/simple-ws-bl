@@ -1,7 +1,8 @@
-﻿import Link from "next/link";
-import { Input } from "@/components/ui/input";
+﻿import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CartSummary } from "@/components/cart";
+import { NavigationLink } from "@/components/ui/navigation-link";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { formatMoney } from "@/lib/money";
 import { getProductListState } from "@/server/products/queries";
 
@@ -20,23 +21,23 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     <main className="mx-auto grid min-h-screen max-w-6xl gap-8 px-6 py-12 lg:grid-cols-[1fr_320px]">
       <section className="space-y-6">
         <div>
-          <Link className="text-sm text-muted-foreground underline-offset-4 hover:underline" href="/">
+          <NavigationLink className="text-sm text-muted-foreground underline-offset-4 hover:underline" href="/" pendingTitle="Cargando inicio" pendingDescription="Volvemos a la tienda principal.">
             Inicio
-          </Link>
+          </NavigationLink>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight">Catálogo</h1>
           <p className="mt-2 text-muted-foreground">Solo productos activos publicados para clientes.</p>
         </div>
 
-        <form className="flex gap-3" action="/catalog">
+        <form className="flex gap-3 animate-in-up" action="/catalog">
           <Input name="q" placeholder="Buscar por nombre o descripción" defaultValue={params?.q ?? ""} />
-          <button className="rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground" type="submit">
+          <SubmitButton className="button-lift rounded-md px-4" pendingLabel="Buscando...">
             Buscar
-          </button>
+          </SubmitButton>
         </form>
 
         <div className="grid gap-4 md:grid-cols-2">
           {products.map((product) => (
-            <Card key={product.id}>
+            <Card key={product.id} className="animate-in-up transition hover:-translate-y-0.5 hover:shadow-md">
               <CardHeader>
                 <CardTitle>{product.name}</CardTitle>
               </CardHeader>
@@ -45,9 +46,9 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
                 <p className="line-clamp-3 text-sm text-muted-foreground">{product.description}</p>
                 <div className="flex items-center justify-between">
                   <strong>{formatMoney({ amountCents: product.priceCents, currency: product.currency })}</strong>
-                  <Link className="text-sm font-medium underline-offset-4 hover:underline" href={`/products/${product.slug}`}>
+                  <NavigationLink className="text-sm font-medium underline-offset-4 hover:underline" href={`/products/${product.slug}`} pendingTitle="Cargando detalle" pendingDescription="Preparamos la ficha completa del producto.">
                     Ver producto
-                  </Link>
+                  </NavigationLink>
                 </div>
               </CardContent>
             </Card>
@@ -64,3 +65,4 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     </main>
   );
 }
+

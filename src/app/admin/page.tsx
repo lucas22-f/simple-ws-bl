@@ -1,19 +1,20 @@
-﻿import Link from "next/link";
+import { AdminShell } from "@/components/admin/admin-shell";
+import { NavigationLink } from "@/components/ui/navigation-link";
 
 export default function AdminDashboardPage() {
   return (
-    <main className="mx-auto flex max-w-5xl flex-col gap-6 px-6 py-10">
-      <div>
-        <p className="text-sm font-semibold uppercase tracking-wide text-stone-500">Admin</p>
-        <h1 className="text-3xl font-bold text-stone-950">Panel del bazar</h1>
-        <p className="text-stone-600">Gestioná productos, órdenes y configuración operativa desde un área protegida.</p>
-      </div>
-      <nav className="grid gap-4 sm:grid-cols-3">
-        <Link className="rounded-2xl border p-5 font-semibold hover:bg-stone-50" href="/admin/products">Productos</Link>
-        <Link className="rounded-2xl border p-5 font-semibold hover:bg-stone-50" href="/admin/orders">Órdenes</Link>
-        <Link className="rounded-2xl border p-5 font-semibold hover:bg-stone-50" href="/admin/settings">Settings</Link>
+    <AdminShell title="Panel del bazar" description="Gestioná productos, órdenes y configuración operativa desde un área protegida.">
+      <nav className="grid gap-4 sm:grid-cols-3" aria-label="Accesos rápidos de administración">
+        <NavigationLink className="rounded-2xl border bg-card p-5 font-semibold shadow-sm transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href="/admin/products" pendingTitle="Cargando productos" pendingDescription="Abrimos la gestión del catálogo.">
+          Productos
+        </NavigationLink>
+        <NavigationLink className="rounded-2xl border bg-card p-5 font-semibold shadow-sm transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href="/admin/orders" pendingTitle="Cargando órdenes" pendingDescription="Abrimos la gestión de pedidos.">
+          Órdenes
+        </NavigationLink>
+        <NavigationLink className="rounded-2xl border bg-card p-5 font-semibold shadow-sm transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href="/admin/settings" pendingTitle="Cargando configuración" pendingDescription="Abrimos las reglas operativas de la tienda.">
+          Configuración
+        </NavigationLink>
       </nav>
-    </main>
+    </AdminShell>
   );
 }
-

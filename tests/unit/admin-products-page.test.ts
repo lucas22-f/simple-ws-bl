@@ -1,4 +1,4 @@
-import { createElement } from "react";
+﻿import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -57,3 +57,4 @@ describe("AdminProductsView", () => {
     expect(html).toContain("Creá el primero con el formulario");
   });
 });
+
