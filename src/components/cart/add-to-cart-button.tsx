@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import * as React from "react";
 import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type CartItemSnapshot, useCartStore } from "@/stores/cart-store";
@@ -11,9 +11,9 @@ type AddToCartButtonProps = {
 
 export function AddToCartButton({ item }: AddToCartButtonProps) {
   const addItem = useCartStore((state) => state.addItem);
-  const [added, setAdded] = useState(false);
+  const [added, setAdded] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!added) {
       return;
     }
@@ -37,5 +37,3 @@ export function AddToCartButton({ item }: AddToCartButtonProps) {
     </Button>
   );
 }
-
-
