@@ -21,7 +21,7 @@ test.describe("storefront checkout", () => {
     await expect(page.getByLabel("Resumen del carrito")).toContainText("1 productos");
 
     await page.getByRole("link", { name: "Finalizar compra" }).click();
-    await expect(page.getByRole("heading", { name: "Datos para preparar tu pedido" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Prepar. tu pedido con confianza/ })).toBeVisible();
 
     await page.getByLabel("Nombre").fill("Ana Gomez");
     await page.getByLabel("Email").fill("ana@example.com");
