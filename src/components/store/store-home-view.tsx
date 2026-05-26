@@ -35,12 +35,12 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
   const productCount = catalog.products.length;
 
   return (
-    <main className="mx-auto grid min-h-screen max-w-7xl gap-8 px-4 py-6 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_336px] lg:px-8">
+    <main className="mx-auto grid min-h-screen max-w-7xl gap-8 bg-background px-4 py-6 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_336px] lg:px-8">
       <section className="space-y-8 lg:space-y-10">
-        <div className="overflow-hidden rounded-[2rem] border bg-card shadow-sm animate-in-up">
+        <div className="animate-in-up overflow-hidden rounded-[1.75rem] border border-border/80 bg-card shadow-[0_10px_30px_rgb(37_26_18/0.08)]">
           <div className="grid gap-0 lg:grid-cols-[1fr_340px]">
             <div className="p-6 sm:p-8 lg:p-10">
-              <p className="inline-flex items-center rounded-full border bg-background px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+              <p className="inline-flex items-center rounded-full border border-border/70 bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
                 Bazar Online
               </p>
               <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
@@ -62,7 +62,7 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </NavigationLink>
                 <a
-                  className="button-lift inline-flex min-h-11 items-center justify-center rounded-xl border bg-background px-5 py-3 text-sm font-semibold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="button-lift inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   href="#destacados"
                 >
                   Ver destacados
@@ -78,10 +78,10 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
               </div>
             </div>
 
-            <div className="border-t bg-muted p-6 sm:p-8 lg:border-l lg:border-t-0">
-              <div className="flex h-full flex-col justify-between gap-8 rounded-[1.5rem] bg-background p-5">
+            <div className="border-t border-border/70 bg-muted/80 p-6 sm:p-8 lg:border-l lg:border-t-0">
+              <div className="flex h-full flex-col justify-between gap-8 rounded-2xl border border-border/70 bg-background p-5 shadow-[0_2px_8px_rgb(37_26_18/0.08)]">
                 <div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_10px_20px_rgb(164_81_36/0.22)]">
                     <ShoppingBag className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <p className="mt-5 text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">Compra sin vueltas</p>
@@ -90,11 +90,11 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
                   </p>
                 </div>
                 <dl className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-2xl border bg-card p-3">
+                  <div className="rounded-xl border border-border/80 bg-card p-3">
                     <dt className="text-muted-foreground">Pago</dt>
                     <dd className="mt-1 font-semibold">Mercado Pago</dd>
                   </div>
-                  <div className="rounded-2xl border bg-card p-3">
+                  <div className="rounded-xl border border-border/80 bg-card p-3">
                     <dt className="text-muted-foreground">Stock</dt>
                     <dd className="mt-1 font-semibold">Validado</dd>
                   </div>
@@ -109,8 +109,10 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
             const Icon = signal.icon;
 
             return (
-              <article key={signal.title} className="rounded-2xl border bg-card p-5 shadow-sm animate-in-up transition hover:-translate-y-0.5 hover:shadow-md">
-                <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
+              <article key={signal.title} className="animate-in-up rounded-xl border border-border/80 bg-card p-5 shadow-[0_2px_8px_rgb(37_26_18/0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </div>
                 <h2 className="mt-4 text-base font-semibold">{signal.title}</h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{signal.description}</p>
               </article>
@@ -127,7 +129,7 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
               </h2>
             </div>
             <NavigationLink
-              className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
+              className="rounded-lg text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               href="/catalog"
               pendingTitle="Cargando catálogo"
               pendingDescription="Buscamos los productos activos para vos."
@@ -139,7 +141,7 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
           {featuredProducts.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
               {featuredProducts.map((product) => (
-                <Card key={product.id} className="overflow-hidden rounded-3xl shadow-sm transition hover:-translate-y-0.5 hover:shadow-md animate-in-up">
+                <Card key={product.id} className="animate-in-up overflow-hidden rounded-2xl border-border/80 shadow-[0_2px_8px_rgb(37_26_18/0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]">
                   <CardHeader className="space-y-3 p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div>
@@ -151,7 +153,7 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
                   </CardHeader>
                   <CardContent className="space-y-5 p-5 pt-0">
                     <p className="line-clamp-3 text-sm leading-6 text-muted-foreground">{product.description}</p>
-                    <div className="flex items-center justify-between gap-4 border-t pt-4">
+                    <div className="flex items-center justify-between gap-4 border-t border-border/70 pt-4">
                       <strong className="text-lg">
                         {formatMoney({ amountCents: product.priceCents, currency: product.currency })}
                       </strong>
@@ -169,7 +171,7 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
               ))}
             </div>
           ) : (
-            <div className="rounded-3xl border bg-card p-6 text-muted-foreground shadow-sm">
+            <div className="rounded-2xl border border-border/80 bg-card p-6 text-muted-foreground shadow-[0_2px_8px_rgb(37_26_18/0.08)]">
               <PackageSearch className="h-6 w-6 text-primary" aria-hidden="true" />
               <p className="mt-4 font-semibold text-foreground">Todavía no hay destacados publicados</p>
               <p className="mt-2 text-sm leading-6">
@@ -179,7 +181,7 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
           )}
         </section>
 
-        <section className="rounded-3xl border bg-muted p-6 sm:p-8" aria-labelledby="buying-flow-title">
+        <section className="rounded-2xl border border-border/80 bg-muted/90 p-6 shadow-[0_2px_8px_rgb(37_26_18/0.08)] sm:p-8" aria-labelledby="buying-flow-title">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">Cómo funciona</p>
             <h2 id="buying-flow-title" className="mt-2 text-3xl font-semibold tracking-tight">
@@ -188,7 +190,7 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             {["Elegí productos activos", "Revisá el carrito", "Confirmá tus datos"].map((step, index) => (
-              <div key={step} className="rounded-2xl bg-background p-5">
+              <div key={step} className="rounded-xl border border-border/70 bg-background p-5">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                   {index + 1}
                 </span>
@@ -206,7 +208,7 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
         </section>
 
         {catalog.status === "error" ? (
-          <div className="rounded-3xl border bg-card p-6 text-muted-foreground shadow-sm" role="status">
+          <div className="rounded-2xl border border-border/80 bg-card p-6 text-muted-foreground shadow-[0_2px_8px_rgb(37_26_18/0.08)]" role="status">
             {catalog.message}
           </div>
         ) : null}

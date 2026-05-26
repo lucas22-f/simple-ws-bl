@@ -1,0 +1,9 @@
+﻿<svg width="220" height="180" viewBox="0 0 220 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Bazar BL isotipo</title>
+  <desc id="desc">Isotipo compacto BL dentro de una etiqueta artesanal minimalista.</desc>
+  <rect width="220" height="180" fill="#fffaf3"/>
+  <path d="M18 12H143C151 12 158 15 164 21L204 61C209 66 212 73 212 80V144C212 157 201 168 188 168H18C8 168 0 160 0 150V30C0 20 8 12 18 12Z" fill="#fffaf3" stroke="#a45124" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M164 21L212 69" stroke="#a45124" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="188" cy="90" r="10" fill="#fffaf3" stroke="#a45124" stroke-width="6"/>
+  <text x="88" y="120" text-anchor="middle" fill="#a45124" font-family="Georgia, 'Times New Roman', serif" font-size="88" font-weight="500" letter-spacing="-3">BL</text>
+</svg>
