@@ -8,7 +8,7 @@ test.describe("admin", () => {
     await page.goto("/admin/products");
 
     await expect(page).toHaveURL(/\/admin\/login\?next=%2Fadmin%2Fproducts$/);
-    await expect(page.getByRole("heading", { name: "Ingresar" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
     await expect(page.getByLabel("Email")).toBeVisible();
     await expect(page.getByLabel("Password")).toBeVisible();
   });
@@ -16,8 +16,20 @@ test.describe("admin", () => {
   test("keeps login available without bypassing the admin middleware", async ({ page }) => {
     await page.goto("/admin/login");
 
-    await expect(page.getByRole("heading", { name: "Ingresar" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Entrar" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+  });
+
+  test("keeps registration public while product management stays protected", async ({ page }) => {
+    await page.goto("/admin/register?next=%2Fadmin%2Fproducts");
+
+    await expect(page).toHaveURL(/\/admin\/register\?next=%2Fadmin%2Fproducts$/);
+    await expect(page.getByRole("heading", { name: "Create admin account" })).toBeVisible();
+    await expect(page.getByLabel("Registration secret")).toBeVisible();
+
+    await page.goto("/admin/products");
+
+    await expect(page).toHaveURL(/\/admin\/login\?next=%2Fadmin%2Fproducts$/);
   });
 
   test("admin product CRUD and order fulfillment smoke", async ({ page }) => {
@@ -26,7 +38,7 @@ test.describe("admin", () => {
     await page.goto("/admin/login");
     await page.getByLabel("Email").fill(adminEmail!);
     await page.getByLabel("Password").fill(adminPassword!);
-    await page.getByRole("button", { name: "Entrar" }).click();
+    await page.getByRole("button", { name: "Sign in" }).click();
 
     await page.goto("/admin/products");
     await expect(page.getByRole("heading", { name: "Productos" })).toBeVisible();

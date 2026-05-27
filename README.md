@@ -39,6 +39,7 @@ npm run build
 | `NEXT_PUBLIC_SUPABASE_URL` | Cliente/servidor | URL del proyecto Supabase. |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Cliente/servidor | Publishable/anon key para lecturas pÃƒÂºblicas y auth de admin. |
 | `SUPABASE_SECRET_KEY` | Servidor | Secret key para operaciones privilegiadas. Nunca exponer al cliente. |
+| `ADMIN_REGISTRATION_SECRET` | Server | Private secret used to create admin accounts from `/admin/register`. Use a long random value; do not share it or commit it. |
 | `MP_ACCESS_TOKEN` | Servidor | Token privado de Mercado Pago para preferencias y consultas de pago. |
 | `MP_WEBHOOK_SECRET` | Servidor | Secreto para verificar webhooks de Mercado Pago. |
 | `NEXT_PUBLIC_META_PIXEL_ID` | Cliente | ID opcional de Meta Pixel; se renderiza solo si es vÃƒÂ¡lido. |
@@ -94,6 +95,7 @@ Checklist mÃƒÂ­nimo:
 
 - Supabase Auth se usa solo para administradores.
 - `/admin/*` estÃƒÂ¡ protegido por middleware y por guards en server actions.
+- `/admin/register` creates the initial admin account only with `ADMIN_REGISTRATION_SECRET`; configure that secret in `.env.local`/Vercel and never paste it into commits, screenshots, issues, or logs.
 - El smoke E2E autenticado necesita un usuario real con perfil `admin`; si no seteÃƒÂ¡s `ADMIN_E2E_EMAIL`/`ADMIN_E2E_PASSWORD`, Playwright verifica guard/login y saltea ese smoke.
 
 ## Analytics

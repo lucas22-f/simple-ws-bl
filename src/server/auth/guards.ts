@@ -1,4 +1,5 @@
 export const ADMIN_LOGIN_PATH = "/admin/login";
+export const ADMIN_REGISTER_PATH = "/admin/register";
 
 export type ProfileRole = "admin" | "customer";
 
@@ -21,10 +22,14 @@ export function createAdminRedirectUrl(currentUrl: string, nextPath: string) {
   return redirectUrl;
 }
 
+export function isPublicAdminAuthRoute(pathname: string) {
+  return pathname === ADMIN_LOGIN_PATH || pathname === ADMIN_REGISTER_PATH;
+}
+
 export function resolveAdminAccess(profile: AuthProfile, currentUrl: string): AdminAccessDecision {
   const url = new URL(currentUrl);
 
-  if (url.pathname === ADMIN_LOGIN_PATH) {
+  if (isPublicAdminAuthRoute(url.pathname)) {
     return { allowed: true };
   }
 
