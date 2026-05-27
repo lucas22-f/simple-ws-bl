@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createPublicEnv, createServerEnv, createSupabaseAdminEnv, createSupabaseServerClientEnv } from "@/server/env";
+import { createAdminRegistrationEnv, createPublicEnv, createServerEnv, createSupabaseAdminEnv, createSupabaseServerClientEnv } from "@/server/env";
 
 const validEnv = {
   NEXT_PUBLIC_SITE_URL: "http://localhost:3000",
@@ -95,5 +95,31 @@ describe("createSupabaseAdminEnv", () => {
         SUPABASE_SECRET_KEY: validEnv.SUPABASE_SECRET_KEY,
       }),
     ).not.toThrow();
+  });
+});
+
+describe("createAdminRegistrationEnv", () => {
+  it("validates only the owner registration secret", () => {
+    expect(
+      createAdminRegistrationEnv({
+        ADMIN_REGISTRATION_SECRET: " owner-secret ",
+      }),
+    ).toEqual({ ADMIN_REGISTRATION_SECRET: "owner-secret" });
+  });
+
+  it("does not require the full server configuration", () => {
+    expect(() =>
+      createAdminRegistrationEnv({
+        ADMIN_REGISTRATION_SECRET: "owner-secret",
+        MP_ACCESS_TOKEN: undefined,
+        MP_WEBHOOK_SECRET: undefined,
+      }),
+    ).not.toThrow();
+  });
+
+  it("throws a safe error when the owner registration secret is missing", () => {
+    expect(() => createAdminRegistrationEnv({})).toThrow(
+      /Invalid admin registration configuration: ADMIN_REGISTRATION_SECRET/,
+    );
   });
 });
