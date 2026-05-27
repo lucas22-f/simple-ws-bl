@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+﻿import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/navigation", () => ({
@@ -103,7 +103,7 @@ describe("admin registration action", () => {
       getSecret: () => "owner-secret",
       adminClient: clients.adminClient,
       authClient: clients.authClient,
-    })).rejects.toThrow("No pudimos crear la cuenta administradora");
+    })).rejects.toThrow("Could not create the admin account");
 
     expect(clients.createUser).not.toHaveBeenCalled();
     expect(clients.upsert).not.toHaveBeenCalled();
@@ -121,7 +121,7 @@ describe("admin registration action", () => {
       getSecret: () => "owner-secret",
       adminClient: clients.adminClient,
       authClient: clients.authClient,
-    })).rejects.toThrow("No pudimos crear la cuenta administradora");
+    })).rejects.toThrow("Could not create the admin account");
 
     expect(clients.createUser).toHaveBeenCalledOnce();
     expect(clients.upsert).not.toHaveBeenCalled();
