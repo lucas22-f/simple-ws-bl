@@ -1,0 +1,29 @@
+﻿<svg width="920" height="300" viewBox="0 0 920 300" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Bazar BL</title>
+  <desc id="desc">Logo editorial Bazar BL con etiqueta artesanal minimalista, hoja y líneas decorativas.</desc>
+  <rect width="920" height="300" fill="#fffaf3"/>
+
+  <g transform="translate(96 92)">
+    <text x="0" y="82" fill="#251a12" font-family="Georgia, 'Times New Roman', serif" font-size="112" font-weight="500" letter-spacing="-4">Bazar</text>
+
+    <path d="M4 112H178" stroke="#a45124" stroke-width="3" stroke-linecap="round"/>
+    <path d="M282 112H404" stroke="#a45124" stroke-width="3" stroke-linecap="round"/>
+
+    <g transform="translate(202 92)" fill="none" stroke="#a45124" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M36 46C44 28 42 14 35 0C25 14 25 28 36 46Z" fill="#a45124" stroke="none" opacity="0.9"/>
+      <path d="M35 46C52 32 70 28 88 35C72 47 55 50 35 46Z" fill="#a45124" stroke="none" opacity="0.9"/>
+      <path d="M35 46C20 35 8 34 0 39C11 50 23 53 35 46Z" fill="#a45124" stroke="none" opacity="0.9"/>
+      <path d="M35 46C48 55 60 64 78 65"/>
+      <path d="M35 46C24 54 14 62 4 73"/>
+    </g>
+  </g>
+
+  <g transform="translate(510 72)">
+    <path d="M20 0H246C255 0 263 4 269 10L318 59C324 65 328 74 328 83V150C328 166 315 179 299 179H20C9 179 0 170 0 159V20C0 9 9 0 20 0Z" fill="#fffaf3" stroke="#a45124" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M269 10L328 69" stroke="#a45124" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="295" cy="90" r="13" fill="#fffaf3" stroke="#a45124" stroke-width="7"/>
+    <path d="M307 89C332 76 370 72 386 87C370 101 333 103 307 89Z" stroke="#a45124" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M307 90L382 124" stroke="#a45124" stroke-width="5" stroke-linecap="round"/>
+    <text x="147" y="127" text-anchor="middle" fill="#a45124" font-family="Georgia, 'Times New Roman', serif" font-size="122" font-weight="500" letter-spacing="-4">BL</text>
+  </g>
+</svg>

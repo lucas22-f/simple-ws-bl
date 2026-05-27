@@ -13,8 +13,11 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Bazar Online",
-  description: "Tienda web simple y moderna para vender productos de bazar.",
+  title: "Bazar BL",
+  description: "Bazar BL: tienda cálida de objetos de bazar con compra simple y clara.",
+  icons: {
+    icon: "/brand/mark-bazar-bl.svg",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
