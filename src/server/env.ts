@@ -25,10 +25,15 @@ const supabaseAdminEnvSchema = publicEnvSchema.pick({
   SUPABASE_SECRET_KEY: z.string().min(1),
 });
 
+const adminRegistrationEnvSchema = z.object({
+  ADMIN_REGISTRATION_SECRET: z.string().trim().min(1),
+});
+
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 export type SupabaseServerClientEnv = z.infer<typeof supabaseServerClientEnvSchema>;
 export type SupabaseAdminEnv = z.infer<typeof supabaseAdminEnvSchema>;
+export type AdminRegistrationEnv = z.infer<typeof adminRegistrationEnvSchema>;
 
 function formatEnvError(error: z.ZodError) {
   return error.issues.map((issue) => issue.path.join(".")).join(", ");
@@ -76,6 +81,16 @@ export function createSupabaseAdminEnv(rawEnv: Record<string, string | undefined
   return parsed.data;
 }
 
+export function createAdminRegistrationEnv(rawEnv: Record<string, string | undefined>): AdminRegistrationEnv {
+  const parsed = adminRegistrationEnvSchema.safeParse(rawEnv);
+
+  if (!parsed.success) {
+    throw new Error(`Invalid admin registration configuration: ${formatEnvError(parsed.error)}`);
+  }
+
+  return parsed.data;
+}
+
 export function getPublicEnv() {
   return createPublicEnv(process.env);
 }
@@ -90,4 +105,8 @@ export function getSupabaseServerClientEnv() {
 
 export function getSupabaseAdminEnv() {
   return createSupabaseAdminEnv(process.env);
+}
+
+export function getAdminRegistrationEnv() {
+  return createAdminRegistrationEnv(process.env);
 }

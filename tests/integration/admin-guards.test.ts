@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ADMIN_LOGIN_PATH,
+  ADMIN_REGISTER_PATH,
   canAccessAdmin,
   createAdminRedirectUrl,
   resolveAdminAccess,
@@ -32,7 +33,7 @@ describe("admin route guards", () => {
     });
   });
 
-  it("does not redirect admin users or the admin login page itself", () => {
+  it("does not redirect admin users or public admin auth pages", () => {
     expect(resolveAdminAccess(adminProfile, "https://bazar.test/admin/settings")).toEqual({
       allowed: true,
     });
@@ -41,9 +42,14 @@ describe("admin route guards", () => {
       allowed: true,
     });
 
+    expect(resolveAdminAccess(null, "https://bazar.test/admin/register")).toEqual({
+      allowed: true,
+    });
+
     expect(createAdminRedirectUrl("https://bazar.test/admin", "/admin/products").pathname).toBe(
       ADMIN_LOGIN_PATH,
     );
+    expect(ADMIN_REGISTER_PATH).toBe("/admin/register");
   });
 });
 
