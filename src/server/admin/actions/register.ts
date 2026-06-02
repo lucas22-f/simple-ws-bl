@@ -8,7 +8,7 @@ import { getAdminRegistrationEnv } from "@/server/env";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 
-const ADMIN_REGISTRATION_FAILURE = "Could not create the admin account";
+const ADMIN_REGISTRATION_FAILURE = "No pudimos crear la cuenta de administrador";
 
 type RegistrationCredentials = {
   email: string;
@@ -69,17 +69,17 @@ function validateRegistrationForm(formData: FormData) {
   const fieldErrors: Record<string, string> = {};
 
   if (!email) {
-    fieldErrors.email = "Enter your email.";
+    fieldErrors.email = "Ingresá tu email.";
   } else if (!/^\S+@\S+\.\S+$/.test(email)) {
-    fieldErrors.email = "Use a valid email, for example admin@store.com.";
+    fieldErrors.email = "Usá un email válido, por ejemplo admin@tienda.com.";
   }
 
   if (!password) {
-    fieldErrors.password = "Enter your password.";
+    fieldErrors.password = "Ingresá tu contraseña.";
   }
 
   if (!secret) {
-    fieldErrors.secret = "Enter the registration secret.";
+    fieldErrors.secret = "Ingresá el secreto de registro.";
   }
 
   return { email, password, secret, fieldErrors };
@@ -96,7 +96,7 @@ export async function executeAdminRegistration(
 ) {
   const { email, password, secret, fieldErrors } = validateRegistrationForm(formData);
   if (Object.keys(fieldErrors).length > 0) {
-    throw new Error("Review the form details");
+    throw new Error("Revisá los datos del formulario");
   }
 
   const expectedSecret = readAdminRegistrationSecret(dependencies);
@@ -142,7 +142,7 @@ export async function registerAdminAction(
 ): Promise<FormActionState> {
   const { fieldErrors } = validateRegistrationForm(formData);
   if (Object.keys(fieldErrors).length > 0) {
-    return actionError("Review the form details.", fieldErrors);
+    return actionError("Revisá los datos del formulario.", fieldErrors);
   }
 
   try {
@@ -150,7 +150,7 @@ export async function registerAdminAction(
     return initialFormActionState;
   } catch (error) {
     if (error instanceof Error && error.message === ADMIN_REGISTRATION_FAILURE) {
-      return actionError("Could not create the admin account. Review the details and try again.", {
+      return actionError("No pudimos crear la cuenta de administrador. Revisá los datos e intentá nuevamente.", {
         email: " ",
         password: " ",
         secret: " ",

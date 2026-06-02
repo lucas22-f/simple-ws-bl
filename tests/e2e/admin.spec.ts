@@ -8,24 +8,24 @@ test.describe("admin", () => {
     await page.goto("/admin/products");
 
     await expect(page).toHaveURL(/\/admin\/login\?next=%2Fadmin%2Fproducts$/);
-    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Iniciar sesión" })).toBeVisible();
     await expect(page.getByLabel("Email")).toBeVisible();
-    await expect(page.getByLabel("Password")).toBeVisible();
+    await expect(page.getByLabel("Contraseña")).toBeVisible();
   });
 
   test("keeps login available without bypassing the admin middleware", async ({ page }) => {
     await page.goto("/admin/login");
 
-    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Iniciar sesión" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Iniciar sesión" })).toBeVisible();
   });
 
   test("keeps registration public while product management stays protected", async ({ page }) => {
     await page.goto("/admin/register?next=%2Fadmin%2Fproducts");
 
     await expect(page).toHaveURL(/\/admin\/register\?next=%2Fadmin%2Fproducts$/);
-    await expect(page.getByRole("heading", { name: "Create admin account" })).toBeVisible();
-    await expect(page.getByLabel("Registration secret")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Crear cuenta de administrador" })).toBeVisible();
+    await expect(page.getByLabel("Secreto de registro")).toBeVisible();
 
     await page.goto("/admin/products");
 
@@ -37,8 +37,8 @@ test.describe("admin", () => {
 
     await page.goto("/admin/login");
     await page.getByLabel("Email").fill(adminEmail!);
-    await page.getByLabel("Password").fill(adminPassword!);
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByLabel("Contraseña").fill(adminPassword!);
+    await page.getByRole("button", { name: "Iniciar sesión" }).click();
 
     await page.goto("/admin/products");
     await expect(page.getByRole("heading", { name: "Productos" })).toBeVisible();

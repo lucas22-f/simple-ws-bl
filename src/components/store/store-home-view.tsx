@@ -1,8 +1,8 @@
+import Image from "next/image";
 import * as React from "react";
-import { ArrowRight, PackageSearch, ShieldCheck, ShoppingBag, Sparkles, Truck } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { NavigationLink } from "@/components/ui/navigation-link";
+import { ArrowDown, ArrowRight, PackageSearch, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { CartSummary } from "@/components/cart";
+import { NavigationLink } from "@/components/ui/navigation-link";
 import { formatMoney } from "@/lib/money";
 import type { getProductListState } from "@/server/products/queries";
 
@@ -14,209 +14,216 @@ type StoreHomeViewProps = {
 
 const storefrontSignals = [
   {
-    title: "Curaduría simple",
-    description: "Pocos productos, bien elegidos, con precios claros desde el primer vistazo.",
+    title: "Curaduría con intención",
+    description: "Objetos simples que suman calidez y carácter a los espacios de todos los días.",
     icon: Sparkles,
   },
   {
-    title: "Checkout cuidado",
-    description: "El pedido valida precio y stock en servidor antes de avanzar al pago.",
+    title: "Compra segura",
+    description: "Precio y disponibilidad se validan antes de avanzar al pago.",
     icon: ShieldCheck,
   },
   {
     title: "Entrega local",
-    description: "Pensado para vender en tu zona, sin esconder costos ni pasos del proceso.",
+    description: "Un proceso claro, cercano y sin pasos escondidos.",
     icon: Truck,
   },
 ];
 
 export function StoreHomeView({ catalog }: StoreHomeViewProps) {
-  const featuredProducts = catalog.products.filter((product) => product.featured).slice(0, 4);
-  const productCount = catalog.products.length;
+  const featuredProducts = catalog.products.filter((product) => product.featured).slice(0, 6);
+  const showcaseProducts = featuredProducts.length > 0 ? featuredProducts : catalog.products.slice(0, 6);
 
   return (
-    <main className="mx-auto grid min-h-screen max-w-7xl gap-8 bg-background px-4 py-6 sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_336px] lg:px-8">
-      <section className="space-y-8 lg:space-y-10">
-        <div className="animate-in-up overflow-hidden rounded-[1.75rem] border border-border/80 bg-card shadow-[0_10px_30px_rgb(37_26_18/0.08)]">
-          <div className="grid gap-0 lg:grid-cols-[1fr_340px]">
-            <div className="p-6 sm:p-8 lg:p-10">
-              <p className="inline-flex items-center rounded-full border border-border/70 bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-                Bazar Online
-              </p>
-              <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-                Bazar simple, compra clara y objetos con intención.
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                Una tienda cálida para descubrir productos de casa sin fricción: mirás, elegís, armás el carrito y avanzás con
-                reglas claras. Diseño lindo, sí; pero primero una compra entendible.
-              </p>
+    <main className="bg-background font-body text-foreground">
+      <section
+        className="relative isolate flex min-h-[calc(100svh-5rem)] items-center overflow-hidden border-b border-border/80"
+        aria-labelledby="home-hero-title"
+      >
+        <Image
+          src="/brand/bazar-bl-home-hero.png"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-[64%_center] sm:object-center"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(255_250_243/0.99)_0%,rgb(255_250_243/0.94)_62%,rgb(255_250_243/0.48)_100%)] sm:bg-[linear-gradient(90deg,rgb(255_250_243/0.98)_0%,rgb(255_250_243/0.94)_36%,rgb(255_250_243/0.3)_67%,rgb(255_250_243/0.04)_100%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-36 bg-[linear-gradient(0deg,rgb(37_26_18/0.18),transparent)]" />
 
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <NavigationLink
-                  className="button-lift inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  href="/catalog"
-                  pendingTitle="Cargando catálogo"
-                  pendingDescription="Buscamos los productos activos para vos."
-                >
-                  Ver catálogo
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </NavigationLink>
-                <a
-                  className="button-lift inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  href="#destacados"
-                >
-                  Ver destacados
-                </a>
-                <NavigationLink
-                  className="button-lift inline-flex min-h-11 items-center justify-center rounded-xl border border-transparent px-5 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  href="/admin/login"
-                  pendingTitle="Cargando inicio de sesión"
-                  pendingDescription="Abrimos el acceso seguro al panel."
-                >
-                  Acceso admin
-                </NavigationLink>
-              </div>
-            </div>
+        <div className="relative mx-auto flex w-full max-w-7xl flex-col justify-center px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
+          <div className="animate-in-up max-w-2xl">
+            <p className="inline-flex items-center rounded-full border border-primary/20 bg-background/80 px-3 py-1 text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-primary backdrop-blur-sm sm:text-xs sm:tracking-[0.24em]">
+              Bazar BL · Objetos para tu hogar
+            </p>
+            <h1 id="home-hero-title" className="mt-5 font-heading text-[2.75rem] font-semibold leading-[0.98] tracking-tight sm:text-6xl sm:leading-none lg:text-7xl">
+              Pequeños detalles.
+              <span className="block text-primary">Espacios con alma.</span>
+            </h1>
+            <p className="mt-5 max-w-sm text-base leading-7 text-muted-foreground sm:max-w-xl sm:text-lg">
+              Una selección cálida de objetos cotidianos para construir una casa que se sienta realmente tuya.
+            </p>
 
-            <div className="border-t border-border/70 bg-muted/80 p-6 sm:p-8 lg:border-l lg:border-t-0">
-              <div className="flex h-full flex-col justify-between gap-8 rounded-2xl border border-border/70 bg-background p-5 shadow-[0_2px_8px_rgb(37_26_18/0.08)]">
-                <div>
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_10px_20px_rgb(164_81_36/0.22)]">
-                    <ShoppingBag className="h-5 w-5" aria-hidden="true" />
-                  </div>
-                  <p className="mt-5 text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">Compra sin vueltas</p>
-                  <p className="mt-3 text-2xl font-semibold tracking-tight">
-                    {productCount > 0 ? `${productCount} productos activos` : "Catálogo en preparación"}
-                  </p>
-                </div>
-                <dl className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-xl border border-border/80 bg-card p-3">
-                    <dt className="text-muted-foreground">Pago</dt>
-                    <dd className="mt-1 font-semibold">Mercado Pago</dd>
-                  </div>
-                  <div className="rounded-xl border border-border/80 bg-card p-3">
-                    <dt className="text-muted-foreground">Stock</dt>
-                    <dd className="mt-1 font-semibold">Validado</dd>
-                  </div>
-                </dl>
-              </div>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <NavigationLink
+                className="button-lift inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                href="/catalog"
+                pendingTitle="Cargando catálogo"
+                pendingDescription="Buscamos los productos activos para vos."
+              >
+                Explorar catálogo
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </NavigationLink>
+              <a
+                className="button-lift inline-flex min-h-12 items-center justify-center rounded-xl border border-border bg-background/75 px-6 py-3 text-sm font-semibold backdrop-blur-sm transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                href="#catalogo"
+              >
+                Ver selección
+              </a>
             </div>
           </div>
-        </div>
 
-        <section className="grid gap-3 sm:grid-cols-3" aria-label="Beneficios de compra">
+          <a
+            className="mt-8 inline-flex w-fit items-center gap-2 rounded-lg text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-foreground/80 transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:mt-10 sm:text-xs sm:tracking-[0.2em] sm:text-background sm:hover:text-primary-foreground"
+            href="#catalogo"
+          >
+            Descubrí la colección
+            <ArrowDown className="h-4 w-4" aria-hidden="true" />
+          </a>
+        </div>
+      </section>
+
+      <section className="border-b border-border/70 bg-muted/45" aria-label="Beneficios de compra">
+        <div className="mx-auto grid max-w-7xl gap-0 px-4 sm:grid-cols-3 sm:px-6 lg:px-8">
           {storefrontSignals.map((signal) => {
             const Icon = signal.icon;
 
             return (
-              <article key={signal.title} className="animate-in-up rounded-xl border border-border/80 bg-card p-5 shadow-[0_2px_8px_rgb(37_26_18/0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <article key={signal.title} className="flex gap-4 border-b border-border/70 py-6 last:border-b-0 sm:border-b-0 sm:border-r sm:px-6 sm:first:pl-0 sm:last:border-r-0 sm:last:pr-0">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </div>
-                <h2 className="mt-4 text-base font-semibold">{signal.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{signal.description}</p>
+                <div>
+                  <h2 className="font-heading text-lg font-semibold">{signal.title}</h2>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{signal.description}</p>
+                </div>
               </article>
             );
           })}
-        </section>
+        </div>
+      </section>
 
-        <section id="destacados" className="space-y-5" aria-labelledby="featured-products-title">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <section id="catalogo" className="scroll-mt-24 py-16 sm:py-20 lg:py-24" aria-labelledby="home-catalog-title">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-4 border-b border-border/70 pb-7 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">Selección del día</p>
-              <h2 id="featured-products-title" className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-                Productos destacados
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">Colección destacada</p>
+              <h2 id="home-catalog-title" className="mt-3 font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
+                Elegidos para transformar lo cotidiano.
               </h2>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+                Texturas honestas, formas simples y objetos que encuentran su lugar sin pedir permiso.
+              </p>
             </div>
             <NavigationLink
-              className="rounded-lg text-sm font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg text-sm font-semibold text-primary underline-offset-4 transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               href="/catalog"
               pendingTitle="Cargando catálogo"
               pendingDescription="Buscamos los productos activos para vos."
             >
               Ver todo el catálogo
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </NavigationLink>
           </div>
 
-          {featuredProducts.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              {featuredProducts.map((product) => (
-                <Card key={product.id} className="animate-in-up overflow-hidden rounded-2xl border-border/80 shadow-[0_2px_8px_rgb(37_26_18/0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]">
-                  <CardHeader className="space-y-3 p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">{product.category?.name ?? "Bazar"}</p>
-                        <CardTitle className="mt-2 text-2xl leading-tight">{product.name}</CardTitle>
-                      </div>
-                      <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">Destacado</span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-5 p-5 pt-0">
-                    <p className="line-clamp-3 text-sm leading-6 text-muted-foreground">{product.description}</p>
-                    <div className="flex items-center justify-between gap-4 border-t border-border/70 pt-4">
-                      <strong className="text-lg">
-                        {formatMoney({ amountCents: product.priceCents, currency: product.currency })}
-                      </strong>
-                      <NavigationLink
-                        className="inline-flex min-h-10 items-center rounded-xl border px-4 text-sm font-semibold transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        href={`/products/${product.slug}`}
-                        pendingTitle="Cargando detalle"
-                        pendingDescription="Preparamos la ficha completa del producto."
-                      >
-                        Ver detalle
-                      </NavigationLink>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-border/80 bg-card p-6 text-muted-foreground shadow-[0_2px_8px_rgb(37_26_18/0.08)]">
-              <PackageSearch className="h-6 w-6 text-primary" aria-hidden="true" />
-              <p className="mt-4 font-semibold text-foreground">Todavía no hay destacados publicados</p>
-              <p className="mt-2 text-sm leading-6">
-                Cuando marques productos como destacados desde el admin, van a aparecer acá con prioridad.
-              </p>
-            </div>
-          )}
-        </section>
+          <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_336px]">
+            <div>
+              {showcaseProducts.length > 0 ? (
+                <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3" aria-label="Productos destacados">
+                  {showcaseProducts.map((product) => {
+                    const productImage = product.images[0];
 
-        <section className="rounded-2xl border border-border/80 bg-muted/90 p-6 shadow-[0_2px_8px_rgb(37_26_18/0.08)] sm:p-8" aria-labelledby="buying-flow-title">
-          <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">Cómo funciona</p>
-            <h2 id="buying-flow-title" className="mt-2 text-3xl font-semibold tracking-tight">
-              Una experiencia corta, sin esconder decisiones.
-            </h2>
-          </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {["Elegí productos activos", "Revisá el carrito", "Confirmá tus datos"].map((step, index) => (
-              <div key={step} className="rounded-xl border border-border/70 bg-background p-5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-                  {index + 1}
-                </span>
-                <p className="mt-4 font-semibold">{step}</p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {index === 0
-                    ? "El catálogo muestra solo lo publicado y disponible para clientes."
-                    : index === 1
-                      ? "El carrito queda a mano para no perder contexto mientras navegás."
-                      : "Antes del pago, el servidor vuelve a validar disponibilidad y precio."}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
+                    return (
+                      <article key={product.id} className="group animate-in-up">
+                        <NavigationLink
+                          className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          href={`/products/${product.slug}`}
+                          pendingTitle="Cargando detalle"
+                          pendingDescription="Preparamos la ficha completa del producto."
+                        >
+                          <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-muted">
+                            {productImage ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={productImage.storagePath}
+                                alt={productImage.altText || product.name}
+                                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                              />
+                            ) : (
+                              <div className="flex h-full items-center justify-center p-6 text-center text-sm font-medium text-muted-foreground">
+                                Imagen de {product.name}
+                              </div>
+                            )}
+                            <span className="absolute left-3 top-3 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold text-muted-foreground shadow-sm backdrop-blur-sm">
+                              {product.category?.name ?? "Bazar"}
+                            </span>
+                          </div>
+                          <div className="pt-4">
+                            <h3 className="font-heading text-xl font-semibold leading-tight transition-colors group-hover:text-primary">
+                              {product.name}
+                            </h3>
+                            <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{product.description}</p>
+                            <p className="mt-3 font-heading text-xl font-semibold text-primary">
+                              {formatMoney({ amountCents: product.priceCents, currency: product.currency })}
+                            </p>
+                          </div>
+                        </NavigationLink>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-border bg-card p-8 text-muted-foreground shadow-[0_2px_8px_rgb(37_26_18/0.08)]">
+                  <PackageSearch className="h-7 w-7 text-primary" aria-hidden="true" />
+                  <p className="mt-4 font-heading text-xl font-semibold text-foreground">La colección está en preparación</p>
+                  <p className="mt-2 text-sm leading-6">Cuando publiques productos activos desde el admin, van a aparecer acá.</p>
+                </div>
+              )}
 
-        {catalog.status === "error" ? (
-          <div className="rounded-2xl border border-border/80 bg-card p-6 text-muted-foreground shadow-[0_2px_8px_rgb(37_26_18/0.08)]" role="status">
-            {catalog.message}
+              {catalog.status === "error" ? (
+                <div className="mt-6 rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground" role="status">
+                  {catalog.message}
+                </div>
+              ) : null}
+            </div>
+
+            <aside className="lg:sticky lg:top-28 lg:h-fit" aria-label="Resumen del carrito">
+              <CartSummary />
+            </aside>
           </div>
-        ) : null}
+        </div>
       </section>
 
-      <div className="lg:sticky lg:top-8 lg:h-fit">
-        <CartSummary />
-      </div>
+      <section className="border-t border-border/70 bg-foreground py-16 text-background sm:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-background/60">Bazar BL</p>
+          <h2 className="mt-4 max-w-3xl font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
+            Tu casa no necesita más cosas. Necesita las correctas.
+          </h2>
+          <p className="mt-5 max-w-xl text-base leading-7 text-background/70">
+            Explorá la colección completa y elegí objetos que acompañen tu forma de habitar.
+          </p>
+          <NavigationLink
+            className="button-lift mt-7 inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            href="/catalog"
+            pendingTitle="Cargando catálogo"
+            pendingDescription="Buscamos los productos activos para vos."
+          >
+            Ir al catálogo
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </NavigationLink>
+        </div>
+      </section>
     </main>
   );
 }

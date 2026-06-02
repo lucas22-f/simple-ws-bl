@@ -17,10 +17,10 @@ export default async function AdminRegisterPage({ searchParams }: AdminRegisterP
       <NavigationLink
         href="/"
         className="w-fit text-sm font-semibold text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        pendingTitle="Loading store"
-        pendingDescription="Returning to the public shopping experience."
+        pendingTitle="Cargando tienda"
+        pendingDescription="Volvemos a la experiencia pública de compra."
       >
-        Back to store
+        Volver a la tienda
       </NavigationLink>
 
       <AdminRegisterForm nextPath={nextPath} />

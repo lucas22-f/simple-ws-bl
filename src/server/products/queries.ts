@@ -45,7 +45,7 @@ export type StorefrontProduct = {
 export type AdminProductRow = Pick<
   ProductRow,
   "id" | "name" | "slug" | "description" | "price_cents" | "currency" | "active" | "featured" | "stock_quantity"
->;
+> & Pick<ProductRow, "product_images">;
 
 export type AdminProduct = {
   id: string;
@@ -57,6 +57,7 @@ export type AdminProduct = {
   active: boolean;
   featured: boolean;
   stockQuantity: number | null;
+  images: { storagePath: string; altText: string }[];
 };
 
 export type ProductQueryClient = {
@@ -114,6 +115,14 @@ export function mapProductRow(row: ProductRow): StorefrontProduct {
 }
 
 export function mapAdminProductRow(row: AdminProductRow): AdminProduct {
+  const images = (row.product_images ?? [])
+    .filter((image) => image.active !== false)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map((image) => ({
+      storagePath: image.storage_path,
+      altText: image.alt_text ?? row.name,
+    }));
+
   return {
     id: row.id,
     name: row.name,
@@ -124,6 +133,7 @@ export function mapAdminProductRow(row: AdminProductRow): AdminProduct {
     active: row.active,
     featured: row.featured,
     stockQuantity: row.stock_quantity,
+    images,
   };
 }
 
@@ -164,7 +174,7 @@ export function createSupabaseAdminProductQueryClient(): AdminProductQueryClient
       const supabase = createSupabaseAdminClient();
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, slug, description, price_cents, currency, active, featured, stock_quantity")
+        .select("id, name, slug, description, price_cents, currency, active, featured, stock_quantity, product_images(storage_path, alt_text, sort_order, active)")
         .order("created_at", { ascending: false });
 
       return { data: (data ?? null) as AdminProductRow[] | null, error };

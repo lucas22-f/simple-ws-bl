@@ -23,6 +23,7 @@ const products = [
     active: true,
     featured: true,
     stockQuantity: 4,
+    images: [{ storagePath: "/images/mate.webp", altText: "Mate camionero artesanal" }],
   },
   {
     id: "550e8400-e29b-41d4-a716-446655440011",
@@ -34,6 +35,7 @@ const products = [
     active: false,
     featured: false,
     stockQuantity: null,
+    images: [],
   },
 ];
 
@@ -41,13 +43,16 @@ describe("AdminProductsView", () => {
   it("renders existing products with edit and archive actions", () => {
     const html = renderToStaticMarkup(createElement(AdminProductsView, { products, actions }));
 
-    expect(html).toContain("Productos actuales");
+    expect(html).toContain("Inventario actual");
     expect(html).toContain("Mate camionero");
     expect(html).toContain("Publicado");
     expect(html).toContain("Producto pausado");
     expect(html).toContain("Pausado");
     expect(html).toContain("Actualizar producto");
     expect(html).toContain("Archivar producto");
+    expect(html).toContain("Ver imagen");
+    expect(html).toContain("/images/mate.webp");
+    expect(html).toContain("Sin imagen disponible");
   });
 
   it("renders an empty state when there are no products", () => {

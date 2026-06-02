@@ -119,6 +119,7 @@ describe("admin product queries", () => {
               active: true,
               featured: true,
               stock_quantity: 4,
+              product_images: [{ storage_path: "products/mate.webp", alt_text: "Mate camionero", sort_order: 0, active: true }],
             },
             {
               id: "550e8400-e29b-41d4-a716-446655440011",
@@ -130,6 +131,7 @@ describe("admin product queries", () => {
               active: false,
               featured: false,
               stock_quantity: null,
+              product_images: [],
             },
           ],
           error: null,
@@ -148,6 +150,7 @@ describe("admin product queries", () => {
         active: true,
         featured: true,
         stockQuantity: 4,
+        images: [{ storagePath: "products/mate.webp", altText: "Mate camionero" }],
       },
       {
         id: "550e8400-e29b-41d4-a716-446655440011",
@@ -159,6 +162,7 @@ describe("admin product queries", () => {
         active: false,
         featured: false,
         stockQuantity: null,
+        images: [],
       },
     ]);
   });

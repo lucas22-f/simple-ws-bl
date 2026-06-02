@@ -25,14 +25,14 @@ export function AdminRegisterForm({ nextPath, initialState = initialFormActionSt
 
   return (
     <form action={formAction} className="relative space-y-4 overflow-hidden rounded-3xl border bg-white p-6 shadow-sm animate-in-up">
-      <FormToast state={state} errorTitle="We could not create the account" />
-      <FormLoadingOverlay title="Creating account" description="We are validating the secret and preparing dashboard access." />
+      <FormToast state={state} errorTitle="No pudimos crear la cuenta" />
+      <FormLoadingOverlay title="Creando cuenta" description="Validamos el secreto y preparamos el acceso al panel." />
       <input name="next" type="hidden" value={nextPath} />
       <div>
         <p className="text-sm font-semibold uppercase tracking-wide text-stone-500">Admin</p>
-        <h1 className="text-2xl font-bold text-stone-950">Create admin account</h1>
+        <h1 className="text-2xl font-bold text-stone-950">Crear cuenta de administrador</h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Use the team private secret to enable the first admin access.
+          Usá el secreto privado del equipo para habilitar el acceso inicial al panel.
         </p>
       </div>
       <label className="block text-sm font-medium">
@@ -47,12 +47,12 @@ export function AdminRegisterForm({ nextPath, initialState = initialFormActionSt
         />
         <FieldMessage
           id="admin-register-email-help"
-          message={state.fieldErrors?.email?.trim() || "Use the email you will use to manage the store."}
+          message={state.fieldErrors?.email?.trim() || "Usá el email con el que vas a administrar la tienda."}
           tone={hasEmailError ? "error" : "neutral"}
         />
       </label>
       <label className="block text-sm font-medium">
-        Password
+        Contraseña
         <input
           aria-describedby="admin-register-password-help"
           aria-invalid={hasPasswordError ? true : undefined}
@@ -63,12 +63,12 @@ export function AdminRegisterForm({ nextPath, initialState = initialFormActionSt
         />
         <FieldMessage
           id="admin-register-password-help"
-          message={state.fieldErrors?.password?.trim() || "Choose a strong password and do not share it outside the team."}
+          message={state.fieldErrors?.password?.trim() || "Elegí una contraseña segura y no la compartas fuera del equipo."}
           tone={hasPasswordError ? "error" : "neutral"}
         />
       </label>
       <label className="block text-sm font-medium">
-        Registration secret
+        Secreto de registro
         <input
           aria-describedby="admin-register-secret-help"
           aria-invalid={hasSecretError ? true : undefined}
@@ -79,20 +79,20 @@ export function AdminRegisterForm({ nextPath, initialState = initialFormActionSt
         />
         <FieldMessage
           id="admin-register-secret-help"
-          message={state.fieldErrors?.secret?.trim() || "Ask the technical owner for this secret. Never store it in the browser."}
+          message={state.fieldErrors?.secret?.trim() || "Pedile este secreto al responsable técnico. Nunca lo guardes en el navegador."}
           tone={hasSecretError ? "error" : "neutral"}
         />
       </label>
-      <SubmitButton className="button-lift w-full" pendingLabel="Creating account...">
-        Create account
+      <SubmitButton className="button-lift w-full" pendingLabel="Creando cuenta...">
+        Crear cuenta
       </SubmitButton>
       <p className="text-center text-sm text-muted-foreground">
-        Already have access?{" "}
+        ¿Ya tenés acceso?{" "}
         <a
           className="font-semibold text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           href={buildAdminLoginHref(nextPath)}
         >
-          I already have an admin account
+          Ya tengo una cuenta de administrador
         </a>
       </p>
     </form>

@@ -103,7 +103,7 @@ describe("admin registration action", () => {
       getSecret: () => "owner-secret",
       adminClient: clients.adminClient,
       authClient: clients.authClient,
-    })).rejects.toThrow("Could not create the admin account");
+    })).rejects.toThrow("No pudimos crear la cuenta de administrador");
 
     expect(clients.createUser).not.toHaveBeenCalled();
     expect(clients.upsert).not.toHaveBeenCalled();
@@ -121,7 +121,7 @@ describe("admin registration action", () => {
       getSecret: () => "owner-secret",
       adminClient: clients.adminClient,
       authClient: clients.authClient,
-    })).rejects.toThrow("Could not create the admin account");
+    })).rejects.toThrow("No pudimos crear la cuenta de administrador");
 
     expect(clients.createUser).toHaveBeenCalledOnce();
     expect(clients.upsert).not.toHaveBeenCalled();
