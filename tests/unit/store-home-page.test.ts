@@ -39,13 +39,13 @@ describe("StoreHomeView", () => {
       }),
     );
 
-    expect(html).toContain("Bazar simple, compra clara");
-    expect(html).toContain("Ver catálogo");
+    expect(html).toContain("Pequeños detalles.");
+    expect(html).toContain("Explorar catálogo");
     expect(html).toContain("Productos destacados");
     expect(html).toContain("Mate camionero");
     expect(html).toContain("Mates");
-    expect(html).toContain("Ver detalle");
-    expect(html).toContain("Compra sin vueltas");
+    expect(html).toContain("/products/mate-camionero");
+    expect(html).toContain("Compra segura");
     expect(html).toContain("Carrito");
   });
 
@@ -61,7 +61,7 @@ describe("StoreHomeView", () => {
       }),
     );
 
-    expect(emptyHtml).toContain("Todavía no hay destacados publicados");
+    expect(emptyHtml).toContain("La colección está en preparación");
     expect(emptyHtml).toContain("Carrito");
     expect(errorHtml).toContain("No pudimos cargar el catálogo.");
     expect(errorHtml).toContain("Carrito");
