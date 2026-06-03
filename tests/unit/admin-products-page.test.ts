@@ -50,6 +50,8 @@ describe("AdminProductsView", () => {
     expect(html).toContain("Pausado");
     expect(html).toContain("Actualizar producto");
     expect(html).toContain("Archivar producto");
+    expect(html).toContain("Imagen del producto");
+    expect(html).toContain("optimiza automáticamente");
     expect(html).toContain("Ver imagen");
     expect(html).toContain("/images/mate.webp");
     expect(html).toContain("Sin imagen disponible");

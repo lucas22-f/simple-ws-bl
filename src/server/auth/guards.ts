@@ -10,7 +10,7 @@ export type AuthProfile = {
 
 export type AdminAccessDecision =
   | { allowed: true }
-  | { allowed: false; redirectTo: string; reason: "unauthenticated" | "forbidden" };
+  | { allowed: false; redirectTo: string; reason: "unauthenticated" | "forbidden" | "authenticated" };
 
 export function canAccessAdmin(profile: AuthProfile): profile is NonNullable<AuthProfile> & { role: "admin" } {
   return profile?.role === "admin";
@@ -22,6 +22,10 @@ export function createAdminRedirectUrl(currentUrl: string, nextPath: string) {
   return redirectUrl;
 }
 
+export function createAdminDashboardUrl(currentUrl: string) {
+  return new URL("/admin", currentUrl);
+}
+
 export function isPublicAdminAuthRoute(pathname: string) {
   return pathname === ADMIN_LOGIN_PATH || pathname === ADMIN_REGISTER_PATH;
 }
@@ -30,6 +34,14 @@ export function resolveAdminAccess(profile: AuthProfile, currentUrl: string): Ad
   const url = new URL(currentUrl);
 
   if (isPublicAdminAuthRoute(url.pathname)) {
+    if (canAccessAdmin(profile)) {
+      return {
+        allowed: false,
+        redirectTo: createAdminDashboardUrl(currentUrl).toString(),
+        reason: "authenticated",
+      };
+    }
+
     return { allowed: true };
   }
 

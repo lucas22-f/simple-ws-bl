@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useActionState } from "react";
-import { Archive, Boxes, CircleDollarSign, Eye, ImageOff, PackageCheck, PackagePlus, PencilLine, Sparkles, X } from "lucide-react";
+import { Archive, Boxes, CircleDollarSign, Eye, ImageOff, ImagePlus, PackageCheck, PackagePlus, PencilLine, Sparkles, X } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { Button } from "@/components/ui/button";
 import { FieldMessage, FormToast } from "@/components/ui/form-feedback";
@@ -10,6 +10,7 @@ import { FormLoadingOverlay } from "@/components/ui/loading-overlay";
 import { PaginationControls } from "@/components/ui/pagination";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { initialFormActionState, type FormActionState } from "@/lib/form-state";
+import { compressProductImage, formatFileSize } from "@/lib/image-compression";
 import type { PaginationState } from "@/lib/pagination";
 import type { AdminProduct } from "@/server/products/queries";
 
@@ -42,6 +43,33 @@ function useProductFormAction(action: ProductFormAction) {
     formAction: isEnhancedAction ? enhancedFormAction : action,
     state: isEnhancedAction ? state : initialFormActionState,
   };
+}
+
+function getFormDataFile(formData: FormData, fieldName: string) {
+  const value = formData.get(fieldName);
+  return value instanceof File && value.size > 0 ? value : null;
+}
+
+function ProductImageField({ status }: { status?: string }) {
+  return (
+    <label className="grid gap-2 rounded-2xl border border-dashed bg-muted/35 p-4 text-sm font-medium sm:col-span-2">
+      <span className="inline-flex items-center gap-2">
+        <ImagePlus className="h-4 w-4 text-primary" aria-hidden="true" />
+        Imagen del producto
+      </span>
+      <input
+        className="min-h-11 rounded-xl border bg-card px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground"
+        name="productImage"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+      />
+      <input name="productImageAlt" type="hidden" value="" />
+      <FieldMessage
+        id="product-image-help"
+        message={status ?? "La imagen se optimiza automáticamente a WebP, máximo 1200px, antes de subirla al bucket."}
+      />
+    </label>
+  );
 }
 
 function ProductStatus({ active, featured }: { active: boolean; featured: boolean }) {
@@ -94,11 +122,28 @@ function ProductFields({ product }: { product?: AdminProduct }) {
 
 function ProductCreateForm({ action }: { action: ProductFormAction }) {
   const { state, formAction } = useProductFormAction(action);
+  const [imageStatus, setImageStatus] = React.useState<string>();
+  const createAction = typeof formAction === "function"
+    ? async (formData: FormData) => {
+        const image = getFormDataFile(formData, "productImage");
+
+        if (image) {
+          setImageStatus(`Optimizando ${formatFileSize(image.size)} antes de subir...`);
+          const compressedImage = await compressProductImage(image);
+          formData.set("productImage", compressedImage);
+          setImageStatus(`Lista para subir: ${formatFileSize(compressedImage.size)} en WebP.`);
+        }
+
+        formAction(formData);
+      }
+    : formAction;
+
   return (
-    <form action={formAction} className="relative mt-5 grid gap-4 overflow-hidden sm:grid-cols-2">
+    <form action={createAction} className="relative mt-5 grid gap-4 overflow-hidden sm:grid-cols-2">
       <FormToast state={state} successTitle="Producto guardado" />
-      <FormLoadingOverlay title="Guardando producto" description="Creamos el producto y actualizamos el catálogo." />
+      <FormLoadingOverlay title="Guardando producto" description="Optimizamos la imagen, creamos el producto y actualizamos el catálogo." />
       <ProductFields />
+      <ProductImageField status={imageStatus} />
       <SubmitButton className="button-lift min-h-11 sm:col-span-2" pendingLabel="Guardando producto...">
         <PackagePlus className="h-4 w-4" aria-hidden="true" />
         Guardar producto
@@ -106,7 +151,6 @@ function ProductCreateForm({ action }: { action: ProductFormAction }) {
     </form>
   );
 }
-
 function ProductUpdateForm({ product, action }: { product: AdminProduct; action: ProductFormAction }) {
   const { state, formAction } = useProductFormAction(action);
   return (

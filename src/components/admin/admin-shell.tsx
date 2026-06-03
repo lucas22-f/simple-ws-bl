@@ -53,14 +53,6 @@ export function AdminShell({ title, description, eyebrow = "Admin", children }: 
             >
               Ver tienda
             </NavigationLink>
-            <NavigationLink
-              href="/admin/login"
-              className="button-lift inline-flex min-h-10 items-center justify-center rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              pendingTitle="Cargando inicio de sesión"
-              pendingDescription="Abrimos el acceso seguro al panel."
-            >
-              Inicio de sesión
-            </NavigationLink>
           </div>
         </div>
 

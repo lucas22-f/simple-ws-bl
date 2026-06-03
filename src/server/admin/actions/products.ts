@@ -1,6 +1,7 @@
-﻿import "server-only";
+import "server-only";
 import { z } from "zod";
 import { assertAdminActionAccess, type AdminActionAuthOptions } from "@/server/admin/actions/auth";
+import { buildProductImagePath, PRODUCT_IMAGE_ALLOWED_TYPES, PRODUCT_IMAGE_MAX_BYTES, PRODUCT_IMAGES_BUCKET } from "@/server/admin/storage";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 
 const optionalUuidSchema = z.union([z.string().uuid(), z.literal("")]).optional().transform((value) => value || null);
@@ -19,8 +20,19 @@ export const productInputSchema = z.object({
 
 export type ProductInput = z.infer<typeof productInputSchema>;
 
+export type ProductImageInput = {
+  file: File;
+  altText: string;
+};
+
+export type CreatedProduct = {
+  id: string;
+  imageUploadFailed?: boolean;
+};
+
 export type ProductsRepository = {
-  createProduct(product: ProductInput): Promise<unknown>;
+  createProduct(product: ProductInput): Promise<CreatedProduct>;
+  uploadProductImage(productId: string, image: ProductImageInput): Promise<unknown>;
   updateProduct(productId: string, product: ProductInput): Promise<unknown>;
   archiveProduct(productId: string): Promise<unknown>;
 };
@@ -60,12 +72,80 @@ function normalizeRawProductInput(rawInput: unknown) {
   return rawInput;
 }
 
+function isFileLike(value: FormDataEntryValue | null): value is File {
+  return typeof File !== "undefined" && value instanceof File;
+}
+
+function normalizeProductImageAltText(value: FormDataEntryValue | null, fallback: string) {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function parseProductImage(rawInput: unknown, productName: string): ProductImageInput | null {
+  if (!(rawInput instanceof FormData)) {
+    return null;
+  }
+
+  const file = rawInput.get("productImage");
+
+  if (!isFileLike(file) || file.size === 0) {
+    return null;
+  }
+
+  if (!PRODUCT_IMAGE_ALLOWED_TYPES.includes(file.type as (typeof PRODUCT_IMAGE_ALLOWED_TYPES)[number])) {
+    throw new Error("La imagen debe ser JPG, PNG o WebP");
+  }
+
+  if (file.size > PRODUCT_IMAGE_MAX_BYTES) {
+    throw new Error("La imagen optimizada no puede superar 5 MB");
+  }
+
+  return {
+    file,
+    altText: normalizeProductImageAltText(rawInput.get("productImageAlt"), productName),
+  };
+}
+
 export function createSupabaseProductsRepository(): ProductsRepository {
   const supabase = createSupabaseAdminClient();
   return {
     async createProduct(product) {
       const { data, error } = await supabase.from("products").insert(toProductRow(product)).select("*").single();
       if (error) throw new Error("No pudimos crear el producto");
+      return data as CreatedProduct;
+    },
+    async uploadProductImage(productId, image) {
+      const path = buildProductImagePath(productId);
+      const { error: uploadError } = await supabase.storage.from(PRODUCT_IMAGES_BUCKET).upload(path, image.file, {
+        cacheControl: "31536000",
+        contentType: image.file.type,
+        upsert: false,
+      });
+
+      if (uploadError) {
+        throw new Error("No pudimos subir la imagen del producto");
+      }
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
+
+      const { data, error: imageError } = await supabase
+        .from("product_images")
+        .insert({
+          product_id: productId,
+          storage_path: publicUrl,
+          alt_text: image.altText,
+          sort_order: 0,
+          active: true,
+        })
+        .select("*")
+        .single();
+
+      if (imageError) {
+        await supabase.storage.from(PRODUCT_IMAGES_BUCKET).remove([path]);
+        throw new Error("No pudimos asociar la imagen al producto");
+      }
+
       return data;
     },
     async updateProduct(productId, product) {
@@ -93,10 +173,26 @@ function parseProductId(productId: string) {
   return parsed.data;
 }
 
-export async function createProductAction(rawInput: unknown, options: ProductActionOptions<Pick<ProductsRepository, "createProduct">> = {}) {
+export async function createProductAction(rawInput: unknown, options: ProductActionOptions<Pick<ProductsRepository, "createProduct"> & Partial<Pick<ProductsRepository, "uploadProductImage">>> = {}) {
   await assertAdminActionAccess(options);
   const repository = options.repository ?? createSupabaseProductsRepository();
-  return repository.createProduct(parseProduct(rawInput));
+  const product = parseProduct(rawInput);
+  const image = parseProductImage(rawInput, product.name);
+  const createdProduct = await repository.createProduct(product);
+
+  if (image) {
+    if (!repository.uploadProductImage) {
+      throw new Error("No pudimos subir la imagen del producto");
+    }
+
+    try {
+      await repository.uploadProductImage(createdProduct.id, image);
+    } catch {
+      return { ...createdProduct, imageUploadFailed: true };
+    }
+  }
+
+  return createdProduct;
 }
 
 export async function updateProductAction(productId: string, rawInput: unknown, options: ProductActionOptions<Pick<ProductsRepository, "updateProduct">> = {}) {

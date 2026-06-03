@@ -50,6 +50,31 @@ describe("admin product actions", () => {
     expect(repository.createProduct).not.toHaveBeenCalled();
   });
 
+  it("uploads an optimized product image after creating the product", async () => {
+    const repository = {
+      createProduct: vi.fn(async (product) => ({ id: "550e8400-e29b-41d4-a716-446655440020", ...product })),
+      uploadProductImage: vi.fn(async () => ({ id: "image-1" })),
+    };
+    const formData = new FormData();
+    const image = new File(["webp"], "mate.webp", { type: "image/webp" });
+
+    formData.set("name", "Mate");
+    formData.set("slug", "mate");
+    formData.set("description", "");
+    formData.set("priceCents", "1000");
+    formData.set("productImage", image);
+    formData.set("productImageAlt", "Mate listo para cebar");
+
+    await expect(createProductAction(formData, { repository, assertAdmin: allowAdmin })).resolves.toMatchObject({
+      id: "550e8400-e29b-41d4-a716-446655440020",
+    });
+
+    expect(repository.uploadProductImage).toHaveBeenCalledWith(
+      "550e8400-e29b-41d4-a716-446655440020",
+      expect.objectContaining({ file: image, altText: "Mate listo para cebar" }),
+    );
+  });
+
   it("builds product image paths with deterministic safe segments only", () => {
     expect(buildProductImagePath("550e8400-e29b-41d4-a716-446655440000", { uuidFactory: () => "11111111-1111-4111-8111-111111111111" }))
       .toBe("products/550e8400-e29b-41d4-a716-446655440000/11111111-1111-4111-8111-111111111111");

@@ -11,8 +11,12 @@ const ADMIN_PRODUCTS_PAGE_SIZE = 5;
 async function saveProduct(_state: FormActionState, formData: FormData): Promise<FormActionState> {
   "use server";
   try {
-    await createProductAction(formData);
+    const product = await createProductAction(formData);
     revalidatePath("/admin/products");
+    if (product.imageUploadFailed) {
+      return actionSuccess("Producto creado, pero no pudimos adjuntar la imagen. Podés editarlo y volver a intentar.");
+    }
+
     return actionSuccess("Producto creado y catálogo actualizado.");
   } catch (error) {
     return actionError(getErrorMessage(error, "No pudimos crear el producto."));
@@ -23,7 +27,7 @@ async function saveProductUpdate(_state: FormActionState, formData: FormData): P
   "use server";
   try {
     const productId = formData.get("productId");
-    if (typeof productId !== "string") throw new Error("ID de producto inválido");
+    if (typeof productId !== "string") throw new Error("ID de producto invÃ¡lido");
     await updateProductAction(productId, formData);
     revalidatePath("/admin/products");
     return actionSuccess("Producto actualizado.");
@@ -36,10 +40,10 @@ async function archiveProduct(_state: FormActionState, formData: FormData): Prom
   "use server";
   try {
     const productId = formData.get("productId");
-    if (typeof productId !== "string") throw new Error("ID de producto inválido");
+    if (typeof productId !== "string") throw new Error("ID de producto invÃ¡lido");
     await archiveProductAction(productId);
     revalidatePath("/admin/products");
-    return actionSuccess("Producto archivado. Ya no aparece en el catálogo público.");
+    return actionSuccess("Producto archivado. Ya no aparece en el catÃ¡logo pÃºblico.");
   } catch (error) {
     return actionError(getErrorMessage(error, "No pudimos archivar el producto."));
   }

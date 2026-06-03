@@ -3,6 +3,7 @@ import {
   ADMIN_LOGIN_PATH,
   ADMIN_REGISTER_PATH,
   canAccessAdmin,
+  createAdminDashboardUrl,
   createAdminRedirectUrl,
   resolveAdminAccess,
   type AuthProfile,
@@ -46,6 +47,13 @@ describe("admin route guards", () => {
       allowed: true,
     });
 
+    expect(resolveAdminAccess(adminProfile, "https://bazar.test/admin/login")).toEqual({
+      allowed: false,
+      redirectTo: "https://bazar.test/admin",
+      reason: "authenticated",
+    });
+
+    expect(createAdminDashboardUrl("https://bazar.test/admin/login").pathname).toBe("/admin");
     expect(createAdminRedirectUrl("https://bazar.test/admin", "/admin/products").pathname).toBe(
       ADMIN_LOGIN_PATH,
     );

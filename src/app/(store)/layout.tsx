@@ -31,7 +31,7 @@ export default function StoreLayout({ children }: Readonly<{ children: ReactNode
             </Link>
             <Link
               className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex"
-              href="/admin/login"
+              href="/admin"
             >
               Admin
             </Link>
