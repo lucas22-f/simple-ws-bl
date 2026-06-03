@@ -1,10 +1,12 @@
 import { revalidatePath } from "next/cache";
 import { actionError, actionSuccess, getErrorMessage, type FormActionState } from "@/lib/form-state";
 import { AdminOrdersForm } from "@/app/admin/orders/admin-orders-form";
+import { parsePageParam } from "@/lib/pagination";
 import { updateOrderFulfillmentStatusAction } from "@/server/admin/actions/orders";
-import { listAdminOrders } from "@/server/orders/queries";
+import { listAdminOrdersPage } from "@/server/orders/queries";
 
 export const dynamic = "force-dynamic";
+const ADMIN_ORDERS_PAGE_SIZE = 5;
 
 async function updateOrder(_state: FormActionState, formData: FormData): Promise<FormActionState> {
   "use server";
@@ -17,7 +19,12 @@ async function updateOrder(_state: FormActionState, formData: FormData): Promise
   }
 }
 
-export default async function AdminOrdersPage() {
-  const orders = await listAdminOrders();
-  return <AdminOrdersForm action={updateOrder} orders={orders} />;
+type AdminOrdersPageProps = {
+  searchParams?: Promise<{ page?: string }>;
+};
+
+export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageProps) {
+  const params = await searchParams;
+  const { orders, pagination } = await listAdminOrdersPage({ page: parsePageParam(params?.page), pageSize: ADMIN_ORDERS_PAGE_SIZE });
+  return <AdminOrdersForm action={updateOrder} orders={orders} pagination={pagination} />;
 }

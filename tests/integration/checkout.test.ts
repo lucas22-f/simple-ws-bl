@@ -190,6 +190,9 @@ describe("Mercado Pago preference creation", () => {
         },
       }),
     );
+    expect(gateway.createPreference).not.toHaveBeenCalledWith(
+      expect.objectContaining({ notificationUrl: expect.anything() }),
+    );
   });
 
   it("persists the Mercado Pago preference ID when using the default production repository", async () => {

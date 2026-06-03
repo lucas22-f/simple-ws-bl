@@ -55,6 +55,21 @@ describe("AdminProductsView", () => {
     expect(html).toContain("Sin imagen disponible");
   });
 
+  it("renders pagination controls for large product inventories", () => {
+    const html = renderToStaticMarkup(
+      createElement(AdminProductsView, {
+        products,
+        pagination: { page: 1, pageSize: 2, totalItems: 15, totalPages: 8 },
+        actions,
+      }),
+    );
+
+    expect(html).toContain("Paginación de productos");
+    expect(html).toContain("1-2");
+    expect(html).toContain("15");
+    expect(html).toContain("/admin/products?page=2");
+  });
+
   it("renders an empty state when there are no products", () => {
     const html = renderToStaticMarkup(createElement(AdminProductsView, { products: [], actions }));
 

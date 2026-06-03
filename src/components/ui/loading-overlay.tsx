@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { Loader2 } from "lucide-react";
 import { useFormStatus } from "react-dom";
 import { cn } from "@/lib/utils";
@@ -18,14 +19,20 @@ export function LoadingOverlay({
   description = "Estamos guardando los cambios. No cierres esta pantalla.",
   className,
 }: LoadingOverlayProps) {
-  if (!show) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!show || !mounted) {
     return null;
   }
 
-  return (
+  return createPortal(
     <div
       className={cn(
-        "absolute inset-0 z-20 grid place-items-center rounded-[inherit] bg-background/82 p-4 text-center backdrop-blur-sm animate-in-fade",
+        "fixed inset-0 z-50 grid place-items-center bg-background/82 p-4 text-center backdrop-blur-sm animate-in-fade",
         className,
       )}
       role="status"
@@ -41,7 +48,8 @@ export function LoadingOverlay({
           <p className="mt-1 text-sm leading-5 text-muted-foreground">{description}</p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

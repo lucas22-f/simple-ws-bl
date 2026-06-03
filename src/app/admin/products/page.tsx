@@ -1,10 +1,12 @@
 import { revalidatePath } from "next/cache";
 import { AdminProductsView } from "@/app/admin/products/product-management";
 import { actionError, actionSuccess, getErrorMessage, type FormActionState } from "@/lib/form-state";
+import { parsePageParam } from "@/lib/pagination";
 import { archiveProductAction, createProductAction, updateProductAction } from "@/server/admin/actions/products";
-import { listAdminProducts } from "@/server/products/queries";
+import { listAdminProductsPage } from "@/server/products/queries";
 
 export const dynamic = "force-dynamic";
+const ADMIN_PRODUCTS_PAGE_SIZE = 5;
 
 async function saveProduct(_state: FormActionState, formData: FormData): Promise<FormActionState> {
   "use server";
@@ -49,7 +51,12 @@ const pageActions = {
   archive: archiveProduct,
 };
 
-export default async function AdminProductsPage() {
-  const products = await listAdminProducts();
-  return <AdminProductsView products={products} actions={pageActions} />;
+type AdminProductsPageProps = {
+  searchParams?: Promise<{ page?: string }>;
+};
+
+export default async function AdminProductsPage({ searchParams }: AdminProductsPageProps) {
+  const params = await searchParams;
+  const { products, pagination } = await listAdminProductsPage({ page: parsePageParam(params?.page), pageSize: ADMIN_PRODUCTS_PAGE_SIZE });
+  return <AdminProductsView products={products} pagination={pagination} actions={pageActions} />;
 }

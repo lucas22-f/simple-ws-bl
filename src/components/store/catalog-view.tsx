@@ -6,6 +6,7 @@ import type { getProductListState } from "@/server/products/queries";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NavigationLink } from "@/components/ui/navigation-link";
+import { PaginationControls } from "@/components/ui/pagination";
 import { SubmitButton } from "@/components/ui/submit-button";
 
 type CatalogState = Awaited<ReturnType<typeof getProductListState>>;
@@ -13,9 +14,10 @@ type CatalogState = Awaited<ReturnType<typeof getProductListState>>;
 type CatalogViewProps = {
   catalog: CatalogState;
   searchQuery?: string;
+  categorySlug?: string;
 };
 
-export function CatalogView({ catalog, searchQuery = "" }: CatalogViewProps) {
+export function CatalogView({ catalog, searchQuery = "", categorySlug }: CatalogViewProps) {
   const products = catalog.products;
   const hasSearch = searchQuery.trim().length > 0;
 
@@ -80,62 +82,72 @@ export function CatalogView({ catalog, searchQuery = "" }: CatalogViewProps) {
             href="/catalog"
           />
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3" aria-label="Productos del catálogo">
-            {products.map((product) => {
-              const productImage = product.images[0];
+          <div className="space-y-6">
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3" aria-label="Productos del catálogo">
+              {products.map((product) => {
+                const productImage = product.images[0];
 
-              return (
-                <Card
-                  key={product.id}
-                  className="group overflow-hidden rounded-3xl border-border shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)] animate-in-up"
-                >
-                  <article>
-                    <div className="relative aspect-[4/5] overflow-hidden bg-muted">
-                      {productImage ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={productImage.storagePath}
-                          alt={productImage.altText || product.name}
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center p-6 text-center text-sm font-medium text-muted-foreground transition duration-500 group-hover:scale-105">
-                          <div>
-                            <ShoppingBag className="mx-auto h-8 w-8 text-primary" aria-hidden="true" />
-                            <p className="mt-3">Imagen de {product.name}</p>
+                return (
+                  <Card
+                    key={product.id}
+                    className="group overflow-hidden rounded-3xl border-border shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)] animate-in-up"
+                  >
+                    <article>
+                      <div className="relative aspect-[4/5] overflow-hidden bg-muted">
+                        {productImage ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={productImage.storagePath}
+                            alt={productImage.altText || product.name}
+                            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center p-6 text-center text-sm font-medium text-muted-foreground transition duration-500 group-hover:scale-105">
+                            <div>
+                              <ShoppingBag className="mx-auto h-8 w-8 text-primary" aria-hidden="true" />
+                              <p className="mt-3">Imagen de {product.name}</p>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      <span className="absolute left-3 top-3 inline-flex rounded-full bg-card px-3 py-1 text-xs font-semibold text-muted-foreground shadow-sm">
-                        {product.category?.name ?? "Bazar"}
-                      </span>
-                    </div>
-
-                    <CardHeader className="space-y-3 p-5">
-                      <CardTitle className="line-clamp-2 font-heading text-xl leading-tight text-foreground">{product.name}</CardTitle>
-                      <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">{product.description}</p>
-                    </CardHeader>
-
-                    <CardContent className="space-y-5 p-5 pt-0">
-                      <div className="flex items-baseline justify-between gap-4 border-t border-border pt-4">
-                        <strong className="font-heading text-xl text-primary">
-                          {formatMoney({ amountCents: product.priceCents, currency: product.currency })}
-                        </strong>
+                        )}
+                        <span className="absolute left-3 top-3 inline-flex rounded-full bg-card px-3 py-1 text-xs font-semibold text-muted-foreground shadow-sm">
+                          {product.category?.name ?? "Bazar"}
+                        </span>
                       </div>
-                      <NavigationLink
-                        className="button-lift inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        href={`/products/${product.slug}`}
-                        pendingTitle="Cargando detalle"
-                        pendingDescription="Preparamos la ficha completa del producto."
-                      >
-                        Ver producto
-                        <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                      </NavigationLink>
-                    </CardContent>
-                  </article>
-                </Card>
-              );
-            })}
+
+                      <CardHeader className="space-y-3 p-5">
+                        <CardTitle className="line-clamp-2 font-heading text-xl leading-tight text-foreground">{product.name}</CardTitle>
+                        <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">{product.description}</p>
+                      </CardHeader>
+
+                      <CardContent className="space-y-5 p-5 pt-0">
+                        <div className="flex items-baseline justify-between gap-4 border-t border-border pt-4">
+                          <strong className="font-heading text-xl text-primary">
+                            {formatMoney({ amountCents: product.priceCents, currency: product.currency })}
+                          </strong>
+                        </div>
+                        <NavigationLink
+                          className="button-lift inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          href={`/products/${product.slug}`}
+                          pendingTitle="Cargando detalle"
+                          pendingDescription="Preparamos la ficha completa del producto."
+                        >
+                          Ver producto
+                          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                        </NavigationLink>
+                      </CardContent>
+                    </article>
+                  </Card>
+                );
+              })}
+            </div>
+            {catalog.pagination ? (
+              <PaginationControls
+                pagination={catalog.pagination}
+                basePath="/catalog"
+                searchParams={{ q: searchQuery || undefined, category: categorySlug }}
+                itemLabel="productos"
+              />
+            ) : null}
           </div>
         )}
       </section>

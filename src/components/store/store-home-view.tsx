@@ -144,14 +144,17 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
                     const productImage = product.images[0];
 
                     return (
-                      <article key={product.id} className="group animate-in-up">
+                      <article
+                        key={product.id}
+                        className="group animate-in-up overflow-hidden rounded-xl border border-border bg-card shadow-[0_2px_8px_rgb(37_26_18/0.08)] transition-shadow hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]"
+                      >
                         <NavigationLink
                           className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           href={`/products/${product.slug}`}
                           pendingTitle="Cargando detalle"
                           pendingDescription="Preparamos la ficha completa del producto."
                         >
-                          <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-muted">
+                          <div className="relative aspect-[4/5] overflow-hidden bg-muted">
                             {productImage ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
@@ -168,7 +171,7 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
                               {product.category?.name ?? "Bazar"}
                             </span>
                           </div>
-                          <div className="pt-4">
+                          <div className="p-4">
                             <h3 className="font-heading text-xl font-semibold leading-tight transition-colors group-hover:text-primary">
                               {product.name}
                             </h3>

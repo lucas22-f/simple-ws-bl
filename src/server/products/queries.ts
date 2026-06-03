@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { createPaginationState, getPaginationRange, type PaginationInput, type PaginationState } from "@/lib/pagination";
 import { getPublicEnv } from "@/server/env";
 
 const PRODUCT_SELECT = `
@@ -60,12 +61,27 @@ export type AdminProduct = {
   images: { storagePath: string; altText: string }[];
 };
 
+export type ProductListState =
+  | {
+      status: "ready";
+      products: StorefrontProduct[];
+      pagination?: PaginationState;
+    }
+  | {
+      status: "error";
+      products: StorefrontProduct[];
+      message: string;
+      pagination?: undefined;
+    };
+
 export type ProductQueryClient = {
-  listProducts: (filters?: { search?: string; category?: string }) => Promise<{ data: ProductRow[] | null; error: unknown }>;
+  listProducts: (
+    filters?: { search?: string; category?: string } & PaginationInput,
+  ) => Promise<{ data: ProductRow[] | null; error: unknown; count?: number | null }>;
 };
 
 export type AdminProductQueryClient = {
-  listAdminProducts: () => Promise<{ data: AdminProductRow[] | null; error: unknown }>;
+  listAdminProducts: (pagination?: PaginationInput) => Promise<{ data: AdminProductRow[] | null; error: unknown; count?: number | null }>;
 };
 
 export const CATALOG_READ_ERROR_MESSAGE = "No pudimos cargar el catálogo. Probá de nuevo en unos minutos.";
@@ -146,7 +162,7 @@ export function createSupabaseProductQueryClient(): ProductQueryClient {
       });
       let query = supabase
         .from("products")
-        .select(PRODUCT_SELECT)
+        .select(PRODUCT_SELECT, { count: filters.pageSize ? "exact" : undefined })
         .eq("active", true)
         .order("featured", { ascending: false })
         .order("created_at", { ascending: false });
@@ -161,23 +177,36 @@ export function createSupabaseProductQueryClient(): ProductQueryClient {
         query = query.eq("categories.slug", filters.category);
       }
 
-      const { data, error } = await query;
-      return { data: (data ?? null) as ProductRow[] | null, error };
+      if (filters.pageSize) {
+        const { from, to } = getPaginationRange({ page: filters.page ?? 1, pageSize: filters.pageSize });
+        query = query.range(from, to);
+      }
+
+      const { data, error, count } = await query;
+      return { data: (data ?? null) as ProductRow[] | null, error, count };
     },
   };
 }
 
 export function createSupabaseAdminProductQueryClient(): AdminProductQueryClient {
   return {
-    async listAdminProducts() {
+    async listAdminProducts(pagination = {}) {
       const { createSupabaseAdminClient } = await import("@/server/supabase/admin");
       const supabase = createSupabaseAdminClient();
-      const { data, error } = await supabase
+      let query = supabase
         .from("products")
-        .select("id, name, slug, description, price_cents, currency, active, featured, stock_quantity, product_images(storage_path, alt_text, sort_order, active)")
+        .select("id, name, slug, description, price_cents, currency, active, featured, stock_quantity, product_images(storage_path, alt_text, sort_order, active)", {
+          count: pagination.pageSize ? "exact" : undefined,
+        })
         .order("created_at", { ascending: false });
 
-      return { data: (data ?? null) as AdminProductRow[] | null, error };
+      if (pagination.pageSize) {
+        const { from, to } = getPaginationRange({ page: pagination.page ?? 1, pageSize: pagination.pageSize });
+        query = query.range(from, to);
+      }
+
+      const { data, error, count } = await query;
+      return { data: (data ?? null) as AdminProductRow[] | null, error, count };
     },
   };
 }
@@ -216,30 +245,57 @@ function shouldUseE2eStoreFixtures() {
 }
 
 export async function listActiveProducts(options: { client?: ProductQueryClient; search?: string; category?: string } = {}) {
+  const { products } = await listActiveProductsPage(options);
+  return products;
+}
+
+export async function listActiveProductsPage(options: { client?: ProductQueryClient; search?: string; category?: string } & PaginationInput = {}) {
   if (!options.client && shouldUseE2eStoreFixtures()) {
     const search = normalizeSearch(options.search)?.toLowerCase();
-    return createE2eProductFixtures().filter((product) => {
+    const filteredProducts = createE2eProductFixtures().filter((product) => {
       const matchesSearch = search ? `${product.name} ${product.description}`.toLowerCase().includes(search) : true;
       const matchesCategory = options.category ? product.category?.slug === options.category : true;
       return matchesSearch && matchesCategory;
     });
+
+    const products = options.pageSize
+      ? filteredProducts.slice((options.page ?? 1) * options.pageSize - options.pageSize, (options.page ?? 1) * options.pageSize)
+      : filteredProducts;
+
+    return { products, totalItems: filteredProducts.length };
   }
 
   const client = options.client ?? createSupabaseProductQueryClient();
-  const { data, error } = await client.listProducts({ search: options.search, category: options.category });
+  const { data, error, count } = await client.listProducts({
+    search: options.search,
+    category: options.category,
+    page: options.page,
+    pageSize: options.pageSize,
+  });
 
   if (error) {
     throw new ProductCatalogReadError(error);
   }
 
-  return (data ?? []).filter(isActiveProduct).map(mapProductRow);
+  const products = (data ?? []).filter(isActiveProduct).map(mapProductRow);
+  return { products, totalItems: count ?? products.length };
 }
 
-export async function getProductListState(options: { client?: ProductQueryClient; search?: string; category?: string } = {}) {
+export async function getProductListState(options: { client?: ProductQueryClient; search?: string; category?: string } & PaginationInput = {}): Promise<ProductListState> {
   try {
+    const { products, totalItems } = await listActiveProductsPage(options);
     return {
       status: "ready" as const,
-      products: await listActiveProducts(options),
+      products,
+      ...(options.pageSize
+        ? {
+            pagination: createPaginationState({
+              page: options.page ?? 1,
+              pageSize: options.pageSize,
+              totalItems,
+            }),
+          }
+        : {}),
     };
   } catch (error) {
     if (!isProductCatalogReadError(error)) {
@@ -255,14 +311,27 @@ export async function getProductListState(options: { client?: ProductQueryClient
 }
 
 export async function listAdminProducts(options: { client?: AdminProductQueryClient } = {}) {
+  const { products } = await listAdminProductsPage(options);
+  return products;
+}
+
+export async function listAdminProductsPage(options: { client?: AdminProductQueryClient } & PaginationInput = {}) {
   const client = options.client ?? createSupabaseAdminProductQueryClient();
-  const { data, error } = await client.listAdminProducts();
+  const { data, error, count } = await client.listAdminProducts({ page: options.page, pageSize: options.pageSize });
 
   if (error) {
     throw new ProductCatalogReadError(error);
   }
 
-  return (data ?? []).map(mapAdminProductRow);
+  const products = (data ?? []).map(mapAdminProductRow);
+  return {
+    products,
+    pagination: createPaginationState({
+      page: options.page ?? 1,
+      pageSize: options.pageSize ?? Math.max(1, products.length),
+      totalItems: count ?? products.length,
+    }),
+  };
 }
 
 export async function listFeaturedProducts(options: { client?: ProductQueryClient; limit?: number } = {}) {

@@ -44,6 +44,21 @@ describe("AdminOrdersForm", () => {
     expect(html).toContain("Todavía no hay órdenes para gestionar");
     expect(html).toContain("va a aparecer acá automáticamente");
   });
+
+  it("renders pagination controls for long order lists", () => {
+    const html = renderToStaticMarkup(
+      createElement(AdminOrdersForm, {
+        orders,
+        action,
+        pagination: { page: 1, pageSize: 1, totalItems: 11, totalPages: 11 },
+      }),
+    );
+
+    expect(html).toContain("Paginación de");
+    expect(html).toContain("1-1");
+    expect(html).toContain("11");
+    expect(html).toContain("/admin/orders?page=2");
+  });
 });
 
 describe("admin order queries", () => {

@@ -21,8 +21,14 @@ export function SubmitButton({ children, pendingLabel = "Procesando...", classNa
       aria-disabled={disabled || pending}
       {...props}
     >
-      {pending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
-      <span>{pending ? pendingLabel : children}</span>
+      {pending ? (
+        <>
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          <span>{pendingLabel}</span>
+        </>
+      ) : (
+        children
+      )}
     </Button>
   );
 }

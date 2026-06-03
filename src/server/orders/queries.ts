@@ -1,4 +1,5 @@
 import type { OrderFulfillmentStatus, OrderPaymentStatus } from "@/lib/status";
+import { createPaginationState, getPaginationRange, type PaginationInput } from "@/lib/pagination";
 
 export type AdminOrderRow = {
   id: string;
@@ -27,7 +28,7 @@ export type AdminOrder = {
 };
 
 export type AdminOrderQueryClient = {
-  listAdminOrders: () => Promise<{ data: AdminOrderRow[] | null; error: unknown }>;
+  listAdminOrders: (pagination?: PaginationInput) => Promise<{ data: AdminOrderRow[] | null; error: unknown; count?: number | null }>;
 };
 
 export function mapAdminOrderRow(row: AdminOrderRow): AdminOrder {
@@ -50,27 +51,47 @@ export function mapAdminOrderRow(row: AdminOrderRow): AdminOrder {
 
 export function createSupabaseAdminOrderQueryClient(): AdminOrderQueryClient {
   return {
-    async listAdminOrders() {
+    async listAdminOrders(pagination = {}) {
       const { createSupabaseAdminClient } = await import("@/server/supabase/admin");
       const supabase = createSupabaseAdminClient();
-      const { data, error } = await supabase
+      let query = supabase
         .from("orders")
-        .select("id, buyer_name, buyer_email, buyer_phone, total_cents, currency, payment_status, fulfillment_status, created_at, order_items(product_name, quantity)")
-        .order("created_at", { ascending: false })
-        .limit(50);
+        .select("id, buyer_name, buyer_email, buyer_phone, total_cents, currency, payment_status, fulfillment_status, created_at, order_items(product_name, quantity)", {
+          count: pagination.pageSize ? "exact" : undefined,
+        })
+        .order("created_at", { ascending: false });
 
-      return { data: (data ?? null) as AdminOrderRow[] | null, error };
+      if (pagination.pageSize) {
+        const { from, to } = getPaginationRange({ page: pagination.page ?? 1, pageSize: pagination.pageSize });
+        query = query.range(from, to);
+      }
+
+      const { data, error, count } = await query;
+      return { data: (data ?? null) as AdminOrderRow[] | null, error, count };
     },
   };
 }
 
 export async function listAdminOrders(options: { client?: AdminOrderQueryClient } = {}) {
+  const { orders } = await listAdminOrdersPage(options);
+  return orders;
+}
+
+export async function listAdminOrdersPage(options: { client?: AdminOrderQueryClient } & PaginationInput = {}) {
   const client = options.client ?? createSupabaseAdminOrderQueryClient();
-  const { data, error } = await client.listAdminOrders();
+  const { data, error, count } = await client.listAdminOrders({ page: options.page, pageSize: options.pageSize });
 
   if (error) {
     throw new Error("No pudimos cargar las órdenes.");
   }
 
-  return (data ?? []).map(mapAdminOrderRow);
+  const orders = (data ?? []).map(mapAdminOrderRow);
+  return {
+    orders,
+    pagination: createPaginationState({
+      page: options.page ?? 1,
+      pageSize: options.pageSize ?? Math.max(1, orders.length),
+      totalItems: count ?? orders.length,
+    }),
+  };
 }

@@ -6,14 +6,17 @@ import { Banknote, ClipboardCheck, Clock3, PackageCheck, PackageSearch, Shopping
 import { AdminShell } from "@/components/admin/admin-shell";
 import { FieldMessage, FormToast } from "@/components/ui/form-feedback";
 import { FormLoadingOverlay } from "@/components/ui/loading-overlay";
+import { PaginationControls } from "@/components/ui/pagination";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { initialFormActionState, type FormActionState } from "@/lib/form-state";
+import type { PaginationState } from "@/lib/pagination";
 import type { OrderFulfillmentStatus, OrderPaymentStatus } from "@/lib/status";
 import type { AdminOrder } from "@/server/orders/queries";
 
 type AdminOrdersFormProps = {
   action: (state: FormActionState, formData: FormData) => Promise<FormActionState>;
   orders: AdminOrder[];
+  pagination?: PaginationState;
 };
 
 const fieldClassName = "min-h-11 rounded-xl border bg-card px-3 py-2 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring";
@@ -89,7 +92,7 @@ function OrderUpdateForm({ action, order }: { action: AdminOrdersFormProps["acti
   );
 }
 
-export function AdminOrdersForm({ action, orders }: AdminOrdersFormProps) {
+export function AdminOrdersForm({ action, orders, pagination }: AdminOrdersFormProps) {
   const pendingOrders = orders.filter((order) => order.fulfillmentStatus === "pending").length;
   const processingOrders = orders.filter((order) => order.fulfillmentStatus === "processing").length;
   const paidOrders = orders.filter((order) => order.paymentStatus === "paid").length;
@@ -106,7 +109,9 @@ export function AdminOrdersForm({ action, orders }: AdminOrdersFormProps) {
           <article key={label} className="animate-in-up rounded-xl border bg-card p-4 shadow-[0_2px_8px_rgb(37_26_18/0.06)]">
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
-              <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                <Icon className="h-4 w-4" aria-hidden="true" />
+              </span>
             </div>
             <p className="mt-3 text-2xl font-bold text-foreground">{value}</p>
           </article>
@@ -116,7 +121,7 @@ export function AdminOrdersForm({ action, orders }: AdminOrdersFormProps) {
       <section className="flex flex-col gap-4">
         <div>
           <h2 className="text-xl font-semibold">Pedidos recientes</h2>
-          <p className="text-sm leading-6 text-muted-foreground">Mostramos las últimas 50 órdenes creadas. Cada cambio se valida nuevamente en el servidor.</p>
+          <p className="text-sm leading-6 text-muted-foreground">Mostramos los pedidos por tandas para que el panel siga siendo rápido cuando crezca la tienda.</p>
         </div>
 
         {orders.length === 0 ? (
@@ -126,8 +131,9 @@ export function AdminOrdersForm({ action, orders }: AdminOrdersFormProps) {
             <p>Cuando ingrese una compra, va a aparecer acá automáticamente.</p>
           </div>
         ) : (
-          <div className="grid gap-4">
-            {orders.map((order) => (
+          <div className="space-y-6">
+            <div className="grid gap-4">
+              {orders.map((order) => (
               <article key={order.id} className="animate-in-up rounded-xl border bg-card p-4 shadow-[0_2px_8px_rgb(37_26_18/0.06)] sm:p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
@@ -156,7 +162,9 @@ export function AdminOrdersForm({ action, orders }: AdminOrdersFormProps) {
                   <OrderUpdateForm action={action} order={order} />
                 </div>
               </article>
-            ))}
+              ))}
+            </div>
+            {pagination ? <PaginationControls pagination={pagination} basePath="/admin/orders" itemLabel="órdenes" /> : null}
           </div>
         )}
       </section>

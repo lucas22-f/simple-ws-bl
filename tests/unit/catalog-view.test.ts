@@ -78,6 +78,26 @@ describe("CatalogView", () => {
     expect(html).not.toContain("Imagen de Mate camionero");
   });
 
+  it("renders pagination controls when the catalog has more than one page", () => {
+    const html = renderToStaticMarkup(
+      createElement(CatalogView, {
+        catalog: {
+          status: "ready",
+          products,
+          pagination: { page: 1, pageSize: 2, totalItems: 12, totalPages: 6 },
+        },
+        searchQuery: "mate",
+      }),
+    );
+
+    expect(html).toContain("Paginación de productos");
+    expect(html).toContain("Mostrando");
+    expect(html).toContain("1-2");
+    expect(html).toContain("12");
+    expect(html).toContain("Siguiente");
+    expect(html).toContain("/catalog?q=mate&amp;page=2");
+  });
+
   it("renders warm empty and error states without hiding catalog recovery or cart context", () => {
     const emptyHtml = renderToStaticMarkup(
       createElement(CatalogView, {

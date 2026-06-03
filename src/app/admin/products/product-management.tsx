@@ -7,14 +7,17 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { Button } from "@/components/ui/button";
 import { FieldMessage, FormToast } from "@/components/ui/form-feedback";
 import { FormLoadingOverlay } from "@/components/ui/loading-overlay";
+import { PaginationControls } from "@/components/ui/pagination";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { initialFormActionState, type FormActionState } from "@/lib/form-state";
+import type { PaginationState } from "@/lib/pagination";
 import type { AdminProduct } from "@/server/products/queries";
 
 export type ProductFormAction = string | ((state: FormActionState, formData: FormData) => Promise<FormActionState>);
 
 type AdminProductsViewProps = {
   products: AdminProduct[];
+  pagination?: PaginationState;
   actions: {
     create: ProductFormAction;
     update: ProductFormAction;
@@ -167,7 +170,7 @@ function ProductEditDialog({ product, actions }: { product: AdminProduct; action
   );
 }
 
-export function AdminProductsView({ products, actions }: AdminProductsViewProps) {
+export function AdminProductsView({ products, pagination, actions }: AdminProductsViewProps) {
   const publishedProducts = products.filter((product) => product.active).length;
   const featuredProducts = products.filter((product) => product.featured).length;
   const trackedStock = products.reduce((total, product) => total + (product.stockQuantity ?? 0), 0);
@@ -184,7 +187,9 @@ export function AdminProductsView({ products, actions }: AdminProductsViewProps)
           <article key={label} className="animate-in-up rounded-xl border bg-card p-4 shadow-[0_2px_8px_rgb(37_26_18/0.06)]">
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
-              <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
+                <Icon className="h-4 w-4" aria-hidden="true" />
+              </span>
             </div>
             <p className="mt-3 text-2xl font-bold text-foreground">{value}</p>
           </article>
@@ -193,7 +198,9 @@ export function AdminProductsView({ products, actions }: AdminProductsViewProps)
 
       <section className="rounded-xl border bg-card p-5 shadow-[0_2px_8px_rgb(37_26_18/0.06)] sm:p-6">
         <div className="flex items-start gap-3">
-          <span className="rounded-lg bg-muted p-2 text-primary"><PackagePlus className="h-5 w-5" aria-hidden="true" /></span>
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted text-primary">
+            <PackagePlus className="h-5 w-5" aria-hidden="true" />
+          </span>
           <div>
             <h2 className="text-xl font-semibold">Crear producto</h2>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">Cargá la información esencial. Después podés editarla desde el listado.</p>
@@ -214,55 +221,58 @@ export function AdminProductsView({ products, actions }: AdminProductsViewProps)
             <p>Creá el primero con el formulario de arriba.</p>
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {products.map((product) => {
-              const productImage = product.images[0];
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {products.map((product) => {
+                const productImage = product.images[0];
 
-              return (
-              <article key={product.id} className="group animate-in-up overflow-hidden rounded-xl border bg-card shadow-[0_2px_8px_rgb(37_26_18/0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]">
-                <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-                  {productImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img className="h-full w-full object-cover transition duration-500 group-hover:scale-105" src={productImage.storagePath} alt={productImage.altText || product.name} />
-                  ) : (
-                    <div className="flex h-full items-center justify-center p-6 text-center text-sm font-medium text-muted-foreground">
-                      <div>
-                        <ImageOff className="mx-auto h-7 w-7 text-primary" aria-hidden="true" />
-                        <p className="mt-3">Sin imagen disponible</p>
+                return (
+                <article key={product.id} className="group animate-in-up overflow-hidden rounded-xl border bg-card shadow-[0_2px_8px_rgb(37_26_18/0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                    {productImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img className="h-full w-full object-cover transition duration-500 group-hover:scale-105" src={productImage.storagePath} alt={productImage.altText || product.name} />
+                    ) : (
+                      <div className="flex h-full items-center justify-center p-6 text-center text-sm font-medium text-muted-foreground">
+                        <div>
+                          <ImageOff className="mx-auto h-7 w-7 text-primary" aria-hidden="true" />
+                          <p className="mt-3">Sin imagen disponible</p>
+                        </div>
                       </div>
+                    )}
+                    <div className="absolute left-3 top-3">
+                      <ProductStatus active={product.active} featured={product.featured} />
                     </div>
-                  )}
-                  <div className="absolute left-3 top-3">
-                    <ProductStatus active={product.active} featured={product.featured} />
                   </div>
-                </div>
 
-                <div className="p-4 sm:p-5">
-                  <div className="grid gap-4">
-                  <div className="min-w-0">
-                    <h3 className="text-lg font-semibold">{product.name}</h3>
-                    <p className="truncate text-sm text-muted-foreground">/{product.slug}</p>
+                  <div className="p-4 sm:p-5">
+                    <div className="grid gap-4">
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-semibold">{product.name}</h3>
+                      <p className="truncate text-sm text-muted-foreground">/{product.slug}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm md:text-right">
+                      <span className="text-muted-foreground">Precio</span>
+                      <strong>{formatPrice(product.priceCents, product.currency)}</strong>
+                      <span className="text-muted-foreground">Stock</span>
+                      <strong>{product.stockQuantity ?? "Sin control"}</strong>
+                    </div>
+                    {productImage ? (
+                      <a className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-primary transition hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href={productImage.storagePath} target="_blank" rel="noreferrer">
+                        <Eye className="h-4 w-4" aria-hidden="true" />
+                        Ver imagen
+                      </a>
+                    ) : null}
                   </div>
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm md:text-right">
-                    <span className="text-muted-foreground">Precio</span>
-                    <strong>{formatPrice(product.priceCents, product.currency)}</strong>
-                    <span className="text-muted-foreground">Stock</span>
-                    <strong>{product.stockQuantity ?? "Sin control"}</strong>
+                  <div className="mt-4 border-t pt-4">
+                    <ProductEditDialog product={product} actions={actions} />
                   </div>
-                  {productImage ? (
-                    <a className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-primary transition hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href={productImage.storagePath} target="_blank" rel="noreferrer">
-                      <Eye className="h-4 w-4" aria-hidden="true" />
-                      Ver imagen
-                    </a>
-                  ) : null}
-                </div>
-                <div className="mt-4 border-t pt-4">
-                  <ProductEditDialog product={product} actions={actions} />
-                </div>
-                </div>
-              </article>
-              );
-            })}
+                  </div>
+                </article>
+                );
+              })}
+            </div>
+            {pagination ? <PaginationControls pagination={pagination} basePath="/admin/products" itemLabel="productos" /> : null}
           </div>
         )}
       </section>

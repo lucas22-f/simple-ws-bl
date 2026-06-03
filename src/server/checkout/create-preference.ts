@@ -36,7 +36,6 @@ export async function createCheckoutPreference(
       failure: `${siteUrl}/payment/failure?order_id=${order.orderId}`,
       pending: `${siteUrl}/payment/pending?order_id=${order.orderId}`,
     },
-    notificationUrl: `${siteUrl}/api/mercado-pago/webhook`,
   });
 
   await repository.setOrderPreference?.({ orderId: order.orderId, preferenceId: preference.preferenceId });
