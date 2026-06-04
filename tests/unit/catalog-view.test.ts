@@ -53,7 +53,7 @@ describe("CatalogView", () => {
     expect(html).toContain("$ 125");
     expect(html).toContain("Ver producto");
     expect(html).toContain("Imagen de Mate camionero");
-    expect(html).toContain("Resumen del carrito");
+    expect(html).not.toContain("Resumen del carrito");
   });
 
   it("renders the first product image when available instead of the placeholder", () => {
@@ -114,10 +114,10 @@ describe("CatalogView", () => {
 
     expect(emptyHtml).toContain("No encontramos productos para tu búsqueda");
     expect(emptyHtml).toContain("Ver todo el catálogo");
-    expect(emptyHtml).toContain("Resumen del carrito");
+    expect(emptyHtml).not.toContain("Resumen del carrito");
     expect(errorHtml).toContain("No pudimos cargar el catálogo.");
     expect(errorHtml).toContain("Probá de nuevo en unos minutos");
-    expect(errorHtml).toContain("Resumen del carrito");
+    expect(errorHtml).not.toContain("Resumen del carrito");
   });
 
   it("keeps the catalog error recovery copy concise when the backend message matches the title", () => {

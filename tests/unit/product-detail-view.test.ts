@@ -31,7 +31,7 @@ describe("ProductDetailView", () => {
     expect(html).toMatch(/\$\s*125/);
     expect(html).toContain("4 unidades disponibles");
     expect(html).toContain("Agregar al carrito");
-    expect(html).toContain("Resumen del carrito");
+    expect(html).not.toContain("Resumen del carrito");
     expect(html).toContain('<img');
     expect(html).toContain('src="https://cdn.example.com/mate-camionero.jpg"');
     expect(html).toContain('alt="Mate camionero de calabaza curada"');
@@ -60,7 +60,7 @@ describe("ProductDetailView", () => {
     expect(html).toContain("No pudimos cargar el producto.");
     expect(html).toContain("Probá de nuevo en unos minutos");
     expect(html).toContain("Volver al catálogo");
-    expect(html).toContain("Resumen del carrito");
+    expect(html).not.toContain("Resumen del carrito");
   });
 
   it("keeps touched product storefront files free of forbidden neutral color families", () => {

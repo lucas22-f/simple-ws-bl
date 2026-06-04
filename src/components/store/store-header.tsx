@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import * as React from "react";
+import { CartDrawer } from "@/components/cart";
 
 const navigationItems = [
   { href: "/catalog", label: "Catálogo" },
@@ -49,28 +50,30 @@ export function StoreHeader() {
           />
         </Link>
 
-        <div className="hidden items-center gap-2 sm:flex sm:gap-3">
-          {navigationItems.map((item) => (
-            <Link
-              key={item.href}
-              className="rounded-lg px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              href={item.href}
-            >
-              {item.label}
-            </Link>
-          ))}
+        <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-1 sm:flex">
+            {navigationItems.map((item) => (
+              <Link
+                key={item.href}
+                className="rounded-lg px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                href={item.href}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+          <CartDrawer />
+          <button
+            type="button"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border bg-card text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
+            aria-label={open ? "Cerrar menú de navegación" : "Abrir menú de navegación"}
+            aria-expanded={open}
+            aria-controls="mobile-store-navigation"
+            onClick={() => setOpen((current) => !current)}
+          >
+            {open ? <X aria-hidden="true" className="h-5 w-5" /> : <Menu aria-hidden="true" className="h-5 w-5" />}
+          </button>
         </div>
-
-        <button
-          type="button"
-          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border bg-card text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:hidden"
-          aria-label={open ? "Cerrar menú de navegación" : "Abrir menú de navegación"}
-          aria-expanded={open}
-          aria-controls="mobile-store-navigation"
-          onClick={() => setOpen((current) => !current)}
-        >
-          {open ? <X aria-hidden="true" className="h-5 w-5" /> : <Menu aria-hidden="true" className="h-5 w-5" />}
-        </button>
       </nav>
 
       <div

@@ -49,7 +49,7 @@ describe("StoreHomeView", () => {
     expect(html).toContain("Ideas para habitar con intención");
     expect(html).toContain("Rituales de cocina");
     expect(html).not.toContain("Ir al catálogo");
-    expect(html).toContain("Carrito");
+    expect(html).not.toContain("Resumen del carrito");
   });
 
   it("renders explicit empty and error states without hiding the cart summary", () => {
@@ -65,9 +65,9 @@ describe("StoreHomeView", () => {
     );
 
     expect(emptyHtml).toContain("La colección está en preparación");
-    expect(emptyHtml).toContain("Carrito");
+    expect(emptyHtml).not.toContain("Resumen del carrito");
     expect(errorHtml).toContain("No pudimos cargar el catálogo.");
-    expect(errorHtml).toContain("Carrito");
+    expect(errorHtml).not.toContain("Resumen del carrito");
   });
 });
 

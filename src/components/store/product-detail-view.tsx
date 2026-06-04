@@ -1,6 +1,6 @@
 import * as React from "react";
 import { ArrowLeft, BadgeCheck, PackageCheck, ShieldCheck, ShoppingBag } from "lucide-react";
-import { AddToCartButton, CartSummary } from "@/components/cart";
+import { AddToCartButton } from "@/components/cart";
 import { formatMoney } from "@/lib/money";
 import type { StorefrontProduct } from "@/server/products/queries";
 import { NavigationLink } from "@/components/ui/navigation-link";
@@ -29,7 +29,7 @@ export function ProductDetailView({ state }: ProductDetailViewProps) {
   const stockCopy = getStockCopy(product.stockQuantity);
 
   return (
-    <main className="mx-auto grid min-h-screen max-w-7xl gap-8 px-4 py-6 font-body sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_336px] lg:px-8">
+    <main className="mx-auto min-h-screen max-w-7xl px-4 py-6 font-body sm:px-6 sm:py-10 lg:px-8">
       <section className="space-y-6 lg:space-y-8" aria-labelledby="product-title">
         <ProductBreadcrumb />
 
@@ -110,17 +110,13 @@ export function ProductDetailView({ state }: ProductDetailViewProps) {
           </div>
         </div>
       </section>
-
-      <div className="lg:sticky lg:top-8 lg:h-fit">
-        <CartSummary />
-      </div>
     </main>
   );
 }
 
 function ProductDetailErrorView() {
   return (
-    <main className="mx-auto grid min-h-screen max-w-7xl gap-8 px-4 py-6 font-body sm:px-6 sm:py-10 lg:grid-cols-[minmax(0,1fr)_336px] lg:px-8">
+    <main className="mx-auto min-h-screen max-w-7xl px-4 py-6 font-body sm:px-6 sm:py-10 lg:px-8">
       <section className="space-y-6" aria-labelledby="product-error-title">
         <ProductBreadcrumb />
         <div className="flex flex-col items-center justify-center rounded-[2rem] border border-border bg-card px-6 py-16 text-center shadow-sm animate-in-up" role="status">
@@ -141,10 +137,6 @@ function ProductDetailErrorView() {
           </NavigationLink>
         </div>
       </section>
-
-      <div className="lg:sticky lg:top-8 lg:h-fit">
-        <CartSummary />
-      </div>
     </main>
   );
 }

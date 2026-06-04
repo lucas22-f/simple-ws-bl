@@ -1,7 +1,6 @@
 import Image from "next/image";
 import * as React from "react";
 import { ArrowDown, ArrowRight, PackageSearch, ShieldCheck, Sparkles, Truck } from "lucide-react";
-import { CartSummary } from "@/components/cart";
 import { NavigationLink } from "@/components/ui/navigation-link";
 import { formatMoney } from "@/lib/money";
 import type { getProductListState } from "@/server/products/queries";
@@ -154,8 +153,7 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
             </NavigationLink>
           </div>
 
-          <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_336px]">
-            <div>
+          <div className="mt-8">
               {showcaseProducts.length > 0 ? (
                 <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8 xl:grid-cols-3" aria-label="Productos destacados">
                   {showcaseProducts.map((product) => {
@@ -216,11 +214,6 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
                   {catalog.message}
                 </div>
               ) : null}
-            </div>
-
-            <aside className="lg:sticky lg:top-28 lg:h-fit" aria-label="Resumen del carrito">
-              <CartSummary />
-            </aside>
           </div>
         </div>
       </section>
