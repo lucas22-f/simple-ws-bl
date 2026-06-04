@@ -30,6 +30,24 @@ const storefrontSignals = [
   },
 ];
 
+const editorialStories = [
+  {
+    title: "Rituales de cocina",
+    description: "Madera, cerámica y textiles que hacen más amable cada pausa.",
+    image: "/editorial/rituales-cocina.png",
+  },
+  {
+    title: "Rincones con calma",
+    description: "Pocas piezas, materiales honestos y espacio para respirar.",
+    image: "/editorial/rincones-con-calma.png",
+  },
+  {
+    title: "El momento del mate",
+    description: "Objetos cotidianos elegidos para acompañar encuentros simples.",
+    image: "/editorial/momento-mate.png",
+  },
+];
+
 export function StoreHomeView({ catalog }: StoreHomeViewProps) {
   const featuredProducts = catalog.products.filter((product) => product.featured).slice(0, 6);
   const showcaseProducts = featuredProducts.length > 0 ? featuredProducts : catalog.products.slice(0, 6);
@@ -139,7 +157,7 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
           <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_336px]">
             <div>
               {showcaseProducts.length > 0 ? (
-                <div className="grid gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3" aria-label="Productos destacados">
+                <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8 xl:grid-cols-3" aria-label="Productos destacados">
                   {showcaseProducts.map((product) => {
                     const productImage = product.images[0];
 
@@ -167,16 +185,16 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
                                 Imagen de {product.name}
                               </div>
                             )}
-                            <span className="absolute left-3 top-3 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold text-muted-foreground shadow-sm backdrop-blur-sm">
+                            <span className="absolute left-2 top-2 max-w-[calc(100%-1rem)] truncate rounded-full bg-background/90 px-2 py-1 text-[0.625rem] font-semibold text-muted-foreground shadow-sm backdrop-blur-sm sm:left-3 sm:top-3 sm:px-3 sm:text-xs">
                               {product.category?.name ?? "Bazar"}
                             </span>
                           </div>
-                          <div className="p-4">
-                            <h3 className="font-heading text-xl font-semibold leading-tight transition-colors group-hover:text-primary">
+                          <div className="p-3 sm:p-4">
+                            <h3 className="font-heading text-base font-semibold leading-tight transition-colors group-hover:text-primary sm:text-xl">
                               {product.name}
                             </h3>
-                            <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{product.description}</p>
-                            <p className="mt-3 font-heading text-xl font-semibold text-primary">
+                            <p className="mt-2 hidden line-clamp-2 text-sm leading-6 text-muted-foreground sm:block">{product.description}</p>
+                            <p className="mt-2 font-heading text-base font-semibold text-primary sm:mt-3 sm:text-xl">
                               {formatMoney({ amountCents: product.priceCents, currency: product.currency })}
                             </p>
                           </div>
@@ -207,24 +225,39 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
         </div>
       </section>
 
-      <section className="border-t border-border/70 bg-foreground py-16 text-background sm:py-20">
+      <section className="border-t border-border/70 bg-foreground py-16 text-background sm:py-20" aria-labelledby="editorial-stories-title">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-background/60">Bazar BL</p>
-          <h2 className="mt-4 max-w-3xl font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
-            Tu casa no necesita más cosas. Necesita las correctas.
+          <h2 id="editorial-stories-title" className="mt-4 max-w-3xl font-heading text-4xl font-semibold tracking-tight sm:text-5xl">
+            Ideas para habitar con intención.
           </h2>
           <p className="mt-5 max-w-xl text-base leading-7 text-background/70">
-            Explorá la colección completa y elegí objetos que acompañen tu forma de habitar.
+            Deslizá para descubrir escenas simples y encontrar inspiración para tus propios espacios.
           </p>
-          <NavigationLink
-            className="button-lift mt-7 inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            href="/catalog"
-            pendingTitle="Cargando catálogo"
-            pendingDescription="Buscamos los productos activos para vos."
-          >
-            Ir al catálogo
-            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-          </NavigationLink>
+
+          <div className="-mx-4 mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:gap-5 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0">
+            {editorialStories.map((story) => (
+              <article
+                key={story.title}
+                className="group relative min-w-[82%] snap-center overflow-hidden rounded-xl border border-background/15 bg-background/5 sm:min-w-[48%] lg:min-w-0"
+              >
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <Image
+                    src={story.image}
+                    alt=""
+                    fill
+                    sizes="(max-width: 640px) 82vw, (max-width: 1024px) 48vw, 33vw"
+                    className="object-cover transition duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-[linear-gradient(0deg,rgb(37_26_18/0.92),rgb(37_26_18/0.04)_70%)]" />
+                  <div className="absolute inset-x-0 bottom-0 p-5">
+                    <h3 className="font-heading text-2xl font-semibold">{story.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-background/70">{story.description}</p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
     </main>

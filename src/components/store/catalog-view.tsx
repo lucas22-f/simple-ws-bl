@@ -83,14 +83,14 @@ export function CatalogView({ catalog, searchQuery = "", categorySlug }: Catalog
           />
         ) : (
           <div className="space-y-6">
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3" aria-label="Productos del catálogo">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-5 xl:grid-cols-3" aria-label="Productos del catálogo">
               {products.map((product) => {
                 const productImage = product.images[0];
 
                 return (
                   <Card
                     key={product.id}
-                    className="group overflow-hidden rounded-3xl border-border shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)] animate-in-up"
+                    className="group overflow-hidden rounded-xl border-border shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)] sm:rounded-3xl animate-in-up"
                   >
                     <article>
                       <div className="relative aspect-[4/5] overflow-hidden bg-muted">
@@ -109,30 +109,30 @@ export function CatalogView({ catalog, searchQuery = "", categorySlug }: Catalog
                             </div>
                           </div>
                         )}
-                        <span className="absolute left-3 top-3 inline-flex rounded-full bg-card px-3 py-1 text-xs font-semibold text-muted-foreground shadow-sm">
+                        <span className="absolute left-2 top-2 inline-flex max-w-[calc(100%-1rem)] truncate rounded-full bg-card px-2 py-1 text-[0.625rem] font-semibold text-muted-foreground shadow-sm sm:left-3 sm:top-3 sm:px-3 sm:text-xs">
                           {product.category?.name ?? "Bazar"}
                         </span>
                       </div>
 
-                      <CardHeader className="space-y-3 p-5">
-                        <CardTitle className="line-clamp-2 font-heading text-xl leading-tight text-foreground">{product.name}</CardTitle>
-                        <p className="line-clamp-2 text-sm leading-6 text-muted-foreground">{product.description}</p>
+                      <CardHeader className="space-y-2 p-3 sm:space-y-3 sm:p-5">
+                        <CardTitle className="line-clamp-2 font-heading text-base leading-tight text-foreground sm:text-xl">{product.name}</CardTitle>
+                        <p className="hidden line-clamp-2 text-sm leading-6 text-muted-foreground sm:block">{product.description}</p>
                       </CardHeader>
 
-                      <CardContent className="space-y-5 p-5 pt-0">
-                        <div className="flex items-baseline justify-between gap-4 border-t border-border pt-4">
-                          <strong className="font-heading text-xl text-primary">
+                      <CardContent className="space-y-3 p-3 pt-0 sm:space-y-5 sm:p-5 sm:pt-0">
+                        <div className="flex items-baseline justify-between gap-2 border-t border-border pt-3 sm:gap-4 sm:pt-4">
+                          <strong className="font-heading text-base text-primary sm:text-xl">
                             {formatMoney({ amountCents: product.priceCents, currency: product.currency })}
                           </strong>
                         </div>
                         <NavigationLink
-                          className="button-lift inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="button-lift inline-flex min-h-10 w-full items-center justify-center gap-1 rounded-lg border border-border bg-background px-2 text-xs font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-11 sm:gap-2 sm:rounded-xl sm:px-4 sm:text-sm"
                           href={`/products/${product.slug}`}
                           pendingTitle="Cargando detalle"
                           pendingDescription="Preparamos la ficha completa del producto."
                         >
                           Ver producto
-                          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                          <ArrowRight className="hidden h-4 w-4 sm:block" aria-hidden="true" />
                         </NavigationLink>
                       </CardContent>
                     </article>

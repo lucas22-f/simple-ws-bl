@@ -32,7 +32,7 @@ const featuredProducts: StorefrontProduct[] = [
 ];
 
 describe("StoreHomeView", () => {
-  it("renders a crafted storefront landing hierarchy with catalog actions and featured products", () => {
+  it("renders a crafted storefront landing hierarchy with featured products and editorial stories", () => {
     const html = renderToStaticMarkup(
       createElement(StoreHomeView, {
         catalog: { status: "ready", products: featuredProducts },
@@ -46,6 +46,9 @@ describe("StoreHomeView", () => {
     expect(html).toContain("Mates");
     expect(html).toContain("/products/mate-camionero");
     expect(html).toContain("Compra segura");
+    expect(html).toContain("Ideas para habitar con intención");
+    expect(html).toContain("Rituales de cocina");
+    expect(html).not.toContain("Ir al catálogo");
     expect(html).toContain("Carrito");
   });
 
