@@ -105,19 +105,25 @@ export function calculateCommissionCents(subtotalCents: number, shippingCents: n
 }
 
 export async function calculateCheckout(input: CheckoutInput, repository: Pick<CheckoutRepository, "getActiveProductsByIds" | "getCheckoutSettings">) {
-  const productIds = [...new Set(input.items.map((item) => item.productId))];
+  const quantitiesByProductId = new Map<string, number>();
+  for (const item of input.items) {
+    quantitiesByProductId.set(item.productId, (quantitiesByProductId.get(item.productId) ?? 0) + item.quantity);
+  }
+
+  const productIds = [...quantitiesByProductId.keys()];
   const [products, settings = DEFAULT_SETTINGS] = await Promise.all([
     repository.getActiveProductsByIds(productIds),
     repository.getCheckoutSettings(),
   ]);
   const productsById = new Map(products.map((product) => [product.id, product]));
 
-  const items = input.items.map((item) => {
-    const product = productsById.get(item.productId);
+  const items = productIds.map((productId) => {
+    const product = productsById.get(productId);
+    const quantity = quantitiesByProductId.get(productId) ?? 0;
     if (!product) {
       throw new Error("Hay productos del carrito que ya no están disponibles");
     }
-    if (product.stockQuantity !== null && item.quantity > product.stockQuantity) {
+    if (product.stockQuantity !== null && quantity > product.stockQuantity) {
       throw new Error(`Stock insuficiente para ${product.name}`);
     }
 
@@ -126,8 +132,8 @@ export async function calculateCheckout(input: CheckoutInput, repository: Pick<C
       productName: product.name,
       productSlug: product.slug,
       unitPriceCents: product.priceCents,
-      quantity: item.quantity,
-      lineTotalCents: product.priceCents * item.quantity,
+      quantity,
+      lineTotalCents: product.priceCents * quantity,
     };
   });
 

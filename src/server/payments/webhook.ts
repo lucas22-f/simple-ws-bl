@@ -13,18 +13,29 @@ export type WebhookRequest = {
 
 export type PaymentGateway = MercadoPagoPaymentGateway;
 
-export type PaymentEventStore = {
-  insertPaymentEvent: (event: {
-    providerEventId: string;
-    eventType: string;
-    payload: unknown;
-    externalReference: string;
-  }) => Promise<{ inserted: boolean }>;
-  updateOrderPaymentStatus: (input: {
-    externalReference: string;
-    mercadoPagoPaymentId: string;
-    paymentStatus: PaymentStatus;
-  }) => Promise<void>;
+export type PaymentReconciliationInput = {
+  providerEventId: string;
+  eventType: string;
+  payload: unknown;
+  externalReference: string;
+  mercadoPagoPaymentId: string;
+  preferenceId: string;
+  metadataOrderId: string;
+  amountCents: number;
+  currency: string;
+  paymentStatus: PaymentStatus;
+};
+
+export type PaymentReconciliationResult = {
+  processed: boolean;
+  duplicate: boolean;
+  rejected: boolean;
+  reason: string | null;
+  paymentStatus?: PaymentStatus | null;
+};
+
+export type PaymentReconciliationStore = {
+  reconcileMercadoPagoPayment: (input: PaymentReconciliationInput) => Promise<PaymentReconciliationResult>;
 };
 
 type MercadoPagoWebhookBody = {
@@ -118,47 +129,68 @@ export function mapMercadoPagoStatus(status: string): PaymentStatus {
   return "pending";
 }
 
-export function createSupabasePaymentEventStore(): PaymentEventStore {
+export function mercadoPagoAmountToCents(amount: number | string) {
+  const parsed = typeof amount === "number" ? amount : Number(amount);
+  if (!Number.isFinite(parsed)) {
+    throw new Error("Mercado Pago no devolvió un monto verificable");
+  }
+
+  return Math.round(parsed * 100);
+}
+
+export function createSupabasePaymentReconciliationStore(): PaymentReconciliationStore {
   const supabase = createSupabaseAdminClient();
 
   return {
-    async insertPaymentEvent(event) {
-      const { error } = await supabase.from("payment_events").insert({
-        provider: "mercado_pago",
-        provider_event_id: event.providerEventId,
-        event_type: event.eventType,
-        payload: event.payload,
+    async reconcileMercadoPagoPayment(input) {
+      const { data, error } = await supabase.rpc("reconcile_mercado_pago_payment", {
+        p_payment: {
+          id: input.mercadoPagoPaymentId,
+          status: input.paymentStatus,
+          external_reference: input.externalReference,
+          preference_id: input.preferenceId,
+          metadata_order_id: input.metadataOrderId,
+          amount_cents: input.amountCents,
+          currency: input.currency,
+        },
+        p_event: {
+          provider_event_id: input.providerEventId,
+          event_type: input.eventType,
+          payload: input.payload,
+        },
       });
 
       if (error) {
-        const code = typeof error === "object" && error !== null && "code" in error ? String(error.code) : "";
-        if (code === "23505") {
-          return { inserted: false };
-        }
-        throw new Error("No pudimos registrar el evento de pago");
+        throw new Error("No pudimos reconciliar el pago");
       }
 
-      return { inserted: true };
-    },
-    async updateOrderPaymentStatus(input) {
-      const { error } = await supabase
-        .from("orders")
-        .update({
-          payment_status: input.paymentStatus,
-          mercado_pago_payment_id: input.mercadoPagoPaymentId,
-        })
-        .eq("external_reference", input.externalReference);
-
-      if (error) {
-        throw new Error("No pudimos actualizar el estado de pago");
+      const row = Array.isArray(data) ? data[0] : data;
+      if (!row) {
+        throw new Error("Mercado Pago no devolvió una reconciliación verificable");
       }
+
+      const result = row as {
+        processed: boolean;
+        duplicate: boolean;
+        rejected: boolean;
+        reason: string | null;
+        payment_status?: PaymentStatus | null;
+      };
+
+      return {
+        processed: result.processed,
+        duplicate: result.duplicate,
+        rejected: result.rejected,
+        reason: result.reason,
+        paymentStatus: result.payment_status,
+      };
     },
   };
 }
 
 export async function handleMercadoPagoWebhook(
   request: WebhookRequest,
-  options: { secret: string; gateway?: PaymentGateway; store?: PaymentEventStore },
+  options: { secret: string; gateway?: PaymentGateway; store?: PaymentReconciliationStore },
 ) {
   const paymentId = getPaymentId(request);
   const requestId = readHeader(request.headers, "x-request-id");
@@ -179,25 +211,34 @@ export async function handleMercadoPagoWebhook(
   }
 
   const gateway = options.gateway ?? createMercadoPagoPaymentGateway();
-  const store = options.store ?? createSupabasePaymentEventStore();
+  const store = options.store ?? createSupabasePaymentReconciliationStore();
   const payment = await gateway.getPayment(paymentId);
   const providerEventId = `${requestId}:${payment.id}:${payment.status}`;
-  const inserted = await store.insertPaymentEvent({
+  const paymentStatus = mapMercadoPagoStatus(payment.status);
+  const reconciliation = await store.reconcileMercadoPagoPayment({
     providerEventId,
     eventType: eventType(request),
     payload: { webhook: request.body, query: request.query, payment },
     externalReference: payment.externalReference,
+    mercadoPagoPaymentId: payment.id,
+    preferenceId: payment.preferenceId,
+    metadataOrderId: payment.metadataOrderId,
+    amountCents: mercadoPagoAmountToCents(payment.transactionAmount),
+    currency: payment.currency,
+    paymentStatus,
   });
 
-  if (!inserted.inserted) {
+  if (reconciliation.duplicate) {
     return { status: 200, body: { processed: false, duplicate: true } };
   }
 
-  await store.updateOrderPaymentStatus({
-    externalReference: payment.externalReference,
-    mercadoPagoPaymentId: payment.id,
-    paymentStatus: mapMercadoPagoStatus(payment.status),
-  });
+  if (reconciliation.rejected) {
+    return { status: 200, body: { processed: false, rejected: true, reason: reconciliation.reason } };
+  }
+
+  if (reconciliation.paymentStatus && reconciliation.paymentStatus !== paymentStatus) {
+    return { status: 200, body: { processed: true, paymentStatus: reconciliation.paymentStatus } };
+  }
 
   return { status: 200, body: { processed: true } };
 }

@@ -39,7 +39,6 @@ file_size_limit = "5MiB"
 public = true
 file_size_limit = "5MiB"
 allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
-objects_path = "./storage/product-images"
 
 [auth]
 enabled = true

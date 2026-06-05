@@ -1,5 +1,5 @@
 ﻿import "server-only";
-import { Payment, Preference, MercadoPagoConfig } from "mercadopago";
+import { Payment, Preference, MerchantOrder, MercadoPagoConfig } from "mercadopago";
 import { getServerEnv } from "@/server/env";
 import type { OrderLineItem } from "@/server/checkout/calculate";
 
@@ -27,6 +27,10 @@ export type MercadoPagoPayment = {
   id: string;
   status: string;
   externalReference: string;
+  preferenceId: string;
+  metadataOrderId: string;
+  transactionAmount: number | string;
+  currency: string;
 };
 
 export type MercadoPagoPaymentGateway = {
@@ -74,11 +78,27 @@ export function createMercadoPagoPreferenceGateway(accessToken = getServerEnv().
 export function createMercadoPagoPaymentGateway(accessToken = getServerEnv().MP_ACCESS_TOKEN): MercadoPagoPaymentGateway {
   const client = new MercadoPagoConfig({ accessToken });
   const payment = new Payment(client);
+  const merchantOrder = new MerchantOrder(client);
 
   return {
     async getPayment(paymentId) {
       const response = await payment.get({ id: paymentId });
-      if (!response.id || !response.status || !response.external_reference) {
+      const merchantOrderResponse = response.order?.id
+        ? await merchantOrder.get({ merchantOrderId: response.order.id })
+        : undefined;
+      const metadata = typeof response.metadata === "object" && response.metadata !== null
+        ? response.metadata as Record<string, unknown>
+        : {};
+
+      if (
+        !response.id
+        || !response.status
+        || !response.external_reference
+        || !merchantOrderResponse?.preference_id
+        || typeof metadata.order_id !== "string"
+        || response.transaction_amount === undefined
+        || !response.currency_id
+      ) {
         throw new Error("Mercado Pago no devolvió un pago verificable");
       }
 
@@ -86,6 +106,10 @@ export function createMercadoPagoPaymentGateway(accessToken = getServerEnv().MP_
         id: String(response.id),
         status: response.status,
         externalReference: response.external_reference,
+        preferenceId: merchantOrderResponse.preference_id,
+        metadataOrderId: metadata.order_id,
+        transactionAmount: response.transaction_amount,
+        currency: response.currency_id,
       };
     },
   };
