@@ -125,6 +125,58 @@ describe("checkout order creation", () => {
     ).rejects.toThrow("Stock insuficiente para Mate camionero");
   });
 
+  it("aggregates duplicate product lines before checking stock and creating the reservation", async () => {
+    const repository = createRepository();
+    const createPendingOrder = vi.spyOn(repository, "createPendingOrder");
+
+    await expect(
+      createCheckoutOrder(
+        {
+          buyer: validBuyer,
+          items: [
+            { productId: "prod-1", quantity: 4 },
+            { productId: "prod-1", quantity: 3 },
+          ],
+        },
+        { repository, externalReferenceFactory: () => "order-ext-duplicates" },
+      ),
+    ).resolves.toMatchObject({
+      totals: { subtotalCents: 87500, shippingCents: 1800, commissionCents: 9000, totalCents: 98300, currency: "ARS" },
+    });
+
+    expect(createPendingOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({
+            productId: "prod-1",
+            quantity: 7,
+            lineTotalCents: 87500,
+          }),
+        ],
+      }),
+    );
+  });
+
+  it("rejects duplicate product lines when their aggregate quantity exceeds stock", async () => {
+    const repository = createRepository();
+    const createPendingOrder = vi.spyOn(repository, "createPendingOrder");
+
+    await expect(
+      createCheckoutOrder(
+        {
+          buyer: validBuyer,
+          items: [
+            { productId: "prod-1", quantity: 6 },
+            { productId: "prod-1", quantity: 5 },
+          ],
+        },
+        { repository },
+      ),
+    ).rejects.toThrow("Stock insuficiente para Mate camionero");
+
+    expect(createPendingOrder).not.toHaveBeenCalled();
+  });
+
   it("creates orders and items through the atomic database RPC instead of split inserts", async () => {
     const supabase = createSupabaseMock();
     supabaseAdmin.createSupabaseAdminClient.mockReturnValue(supabase);
@@ -159,6 +211,24 @@ describe("checkout order creation", () => {
       totals: { subtotalCents: 12500, shippingCents: 1800, commissionCents: 1500, totalCents: 15800, currency: "ARS" },
       externalReference: "order-ext-default",
     })).rejects.toThrow("No pudimos crear la orden");
+
+    expect(supabase.ordersInsert).not.toHaveBeenCalled();
+    expect(supabase.orderItemsInsert).not.toHaveBeenCalled();
+  });
+
+  it("maps atomic reservation stock conflicts to a checkout-safe error", async () => {
+    const supabase = createSupabaseMock();
+    supabase.rpc.mockResolvedValueOnce({ data: null, error: { message: "insufficient_stock" } } as never);
+    supabaseAdmin.createSupabaseAdminClient.mockReturnValue(supabase);
+    const repository = createSupabaseCheckoutRepository();
+
+    await expect(repository.createPendingOrder({
+      buyer: validBuyer,
+      shippingAddress: { address: validBuyer.address, city: validBuyer.city, postalCode: validBuyer.postalCode },
+      items: [{ productId: "prod-1", productName: "Mate camionero", productSlug: "mate-camionero", unitPriceCents: 12500, quantity: 1, lineTotalCents: 12500 }],
+      totals: { subtotalCents: 12500, shippingCents: 1800, commissionCents: 1500, totalCents: 15800, currency: "ARS" },
+      externalReference: "order-ext-stock-conflict",
+    })).rejects.toThrow("Stock insuficiente");
 
     expect(supabase.ordersInsert).not.toHaveBeenCalled();
     expect(supabase.orderItemsInsert).not.toHaveBeenCalled();

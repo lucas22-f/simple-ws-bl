@@ -26,6 +26,14 @@ function asNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
+function createPendingOrderErrorMessage(error: { message?: string } | null) {
+  if (error?.message?.includes("insufficient_stock")) {
+    return "Stock insuficiente para completar la orden";
+  }
+
+  return "No pudimos crear la orden";
+}
+
 function normalizeSettings(rows: SettingRow[] | null): CheckoutSettings {
   const map = new Map((rows ?? []).map((row) => [row.key, row.value]));
   const shippingValue = map.get("shipping_zones");
@@ -111,7 +119,7 @@ export function createSupabaseCheckoutRepository(): CheckoutRepository {
       });
 
       if (error || !orderRow) {
-        throw new Error("No pudimos crear la orden");
+        throw new Error(createPendingOrderErrorMessage(error));
       }
 
       const row = Array.isArray(orderRow) ? orderRow[0] : orderRow;
