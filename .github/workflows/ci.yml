@@ -52,7 +52,8 @@ jobs:
           supabase status -o env \
             --override-name api.url=NEXT_PUBLIC_SUPABASE_URL \
             --override-name auth.anon_key=NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
-            --override-name auth.service_role_key=SUPABASE_SECRET_KEY >> "$GITHUB_ENV"
+            --override-name auth.service_role_key=SUPABASE_SECRET_KEY \
+            | sed -E 's/^([^=]+)="(.*)"$/\1=\2/' >> "$GITHUB_ENV"
 
       - name: Reset local database
         run: supabase db reset --local --yes
