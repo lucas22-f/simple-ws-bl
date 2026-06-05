@@ -21,8 +21,10 @@ vi.mock("@/server/security/rate-limit", async (importOriginal) => {
 
 describe("checkout preference route rate limiting", () => {
   beforeEach(() => {
+    vi.resetModules();
     checkout.createCheckoutPreference.mockReset();
     limiter.consume.mockReset();
+    delete process.env.E2E_MERCADO_PAGO_CHECKOUT_URL;
   });
 
   it("returns 429 and Retry-After before creating an order or payment preference when the caller is limited", async () => {
@@ -78,5 +80,38 @@ describe("checkout preference route rate limiting", () => {
       preferenceId: "pref-1",
     });
     expect(checkout.createCheckoutPreference).toHaveBeenCalledOnce();
+  });
+
+  it("does not bypass production checkout persistence when an E2E checkout URL env var is present", async () => {
+    process.env.E2E_MERCADO_PAGO_CHECKOUT_URL = "https://e2e.test/checkout";
+    limiter.consume.mockResolvedValueOnce({
+      allowed: true,
+      retryAfterSeconds: 0,
+      remaining: 4,
+      resetAt: new Date("2026-06-05T12:01:00.000Z"),
+    });
+    checkout.createCheckoutPreference.mockResolvedValueOnce({
+      orderId: "order-1",
+      checkoutUrl: "https://mp.test/checkout",
+      preferenceId: "pref-1",
+    });
+    const { POST } = await import("@/app/api/checkout/preferences/route");
+
+    const response = await POST(new Request("https://bazar.test/api/checkout/preferences", {
+      method: "POST",
+      headers: { "x-real-ip": "198.51.100.22" },
+      body: JSON.stringify({ buyer: { email: "ana@example.com" }, items: [] }),
+    }));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      orderId: "order-1",
+      checkoutUrl: "https://mp.test/checkout",
+      preferenceId: "pref-1",
+    });
+    expect(checkout.createCheckoutPreference).toHaveBeenCalledWith(
+      { buyer: { email: "ana@example.com" }, items: [] },
+      {},
+    );
   });
 });

@@ -9,6 +9,7 @@
                     "start":  "next start",
                     "lint":  "eslint .",
                     "typecheck":  "tsc --noEmit",
+                    "env:check":  "node ./scripts/check-env-files.mjs",
                     "test":  "vitest run",
                     "test:watch":  "vitest",
                     "test:e2e":  "node ./scripts/run-e2e.mjs",
@@ -17,7 +18,8 @@
                     "supabase:start":  "supabase start",
                     "supabase:stop":  "supabase stop",
                     "supabase:db:reset":  "supabase db reset",
-                    "supabase:db:lint":  "supabase db lint --local --schema public --fail-on warning"
+                    "supabase:db:lint":  "supabase db lint --local --schema public --fail-on warning",
+                    "supabase:db:test":  "supabase test db"
                 },
     "devDependencies":  {
                             "@eslint/eslintrc":  "^3.2.0",
