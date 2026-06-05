@@ -23,11 +23,13 @@ npm run build
 | `npm run dev` | Levanta Next.js local. |
 | `npm run lint` | Ejecuta ESLint. |
 | `npm run typecheck` | Valida TypeScript sin emitir archivos. |
+| `npm run env:check` | Verifica que los archivos de entorno no tengan BOM UTF-8. |
 | `npm test` | Ejecuta unit/integration tests con Vitest. |
 | `npm run test:e2e` | Ejecuta Playwright; levanta Next en `http://127.0.0.1:3100`. |
 | `npm run build` | Compila la app para producciÃƒÂ³n. |
 | `npm run supabase:start` | Levanta Supabase local con Docker. |
 | `npm run supabase:db:reset` | Aplica migraciones locales y `supabase/seed.sql`. |
+| `npm run supabase:db:test` | Ejecuta los tests pgTAP contra la DB local. |
 | `npm run supabase:db:lint` | Valida schema local. |
 | `npm run supabase:stop` | Detiene Supabase local. |
 
@@ -44,7 +46,6 @@ npm run build
 | `MP_WEBHOOK_SECRET` | Servidor | Secreto para verificar webhooks de Mercado Pago. |
 | `NEXT_PUBLIC_META_PIXEL_ID` | Cliente | ID opcional de Meta Pixel; se renderiza solo si es vÃƒÂ¡lido. |
 | `NEXT_PUBLIC_GTM_ID` | Cliente | ID opcional de Google Tag Manager; se renderiza solo si es vÃƒÂ¡lido. |
-| `E2E_MERCADO_PAGO_CHECKOUT_URL` | Tests | URL mock usada por Playwright para no llamar a Mercado Pago real. |
 | `ADMIN_E2E_EMAIL` / `ADMIN_E2E_PASSWORD` | Tests manuales | Credenciales opcionales para smoke E2E autenticado de admin. |
 
 
@@ -77,8 +78,8 @@ No uses `supabase db reset --linked`; es destructivo para el remoto.
 1. En Mercado Pago, configurÃƒÂ¡ Checkout Pro con `MP_ACCESS_TOKEN` del entorno correcto.
 2. ConfigurÃƒÂ¡ la URL de webhook: `https://<tu-dominio>/api/mercado-pago/webhook`.
 3. GuardÃƒÂ¡ el secreto en `MP_WEBHOOK_SECRET`.
-4. Las pÃƒÂ¡ginas `/payment/success`, `/payment/failure` y `/payment/pending` son informativas: el pago se confirma solo por webhook firmado.
-5. Para E2E, Playwright usa `E2E_MERCADO_PAGO_CHECKOUT_URL` y no realiza llamadas reales a Mercado Pago.
+4. Las páginas `/payment/success`, `/payment/failure` y `/payment/pending` son informativas: el pago se confirma solo por webhook firmado.
+5. Para E2E, Playwright intercepta `/api/checkout/preferences`; la app no tiene bypass de checkout por variable de entorno.
 
 ## Deploy en Vercel
 

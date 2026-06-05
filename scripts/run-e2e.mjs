@@ -1,8 +1,8 @@
 import { spawn } from "node:child_process";
 
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3100";
+const playwrightArgs = process.argv.slice(2);
 process.env.NEXT_PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? baseUrl;
-process.env.E2E_MERCADO_PAGO_CHECKOUT_URL = process.env.E2E_MERCADO_PAGO_CHECKOUT_URL ?? `${baseUrl}/__e2e__/mercado-pago/checkout?preference_id=e2e-preference`;
 process.env.E2E_STORE_FIXTURES = process.env.E2E_STORE_FIXTURES ?? "1";
 
 function spawnChild(command, args, options = {}) {
@@ -46,7 +46,7 @@ const server = spawnChild(process.execPath, ["./scripts/e2e-webserver.mjs"]);
 let exitCode = 1;
 try {
   await waitForServer(baseUrl);
-  const testProcess = spawnChild(process.execPath, ["./node_modules/@playwright/test/cli.js", "test"], {
+  const testProcess = spawnChild(process.execPath, ["./node_modules/@playwright/test/cli.js", "test", ...playwrightArgs], {
     env: {
       ...process.env,
       PLAYWRIGHT_BASE_URL: baseUrl,
