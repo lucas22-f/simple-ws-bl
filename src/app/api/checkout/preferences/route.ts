@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { createCheckoutPreference } from "@/server/checkout/create-preference";
+import { CHECKOUT_RATE_LIMIT, createDefaultRateLimiter, getClientIpFromHeaders } from "@/server/security/rate-limit";
 import type { CheckoutRepository } from "@/server/checkout/calculate";
 import type { PreferenceGateway } from "@/server/payments/mercado-pago";
+
+const checkoutRateLimiter = createDefaultRateLimiter();
 
 function createE2ePreferenceGateway(checkoutUrl: string): PreferenceGateway {
   return {
@@ -39,6 +42,21 @@ function createE2eCheckoutRepository(): CheckoutRepository {
 
 export async function POST(request: Request) {
   try {
+    const rateLimit = await checkoutRateLimiter.consume({
+      ...CHECKOUT_RATE_LIMIT,
+      identity: getClientIpFromHeaders(request.headers),
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Demasiados intentos. Probá de nuevo en unos minutos." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(Math.max(1, rateLimit.retryAfterSeconds)) },
+        },
+      );
+    }
+
     const body = await request.json();
     const e2eCheckoutUrl = process.env.E2E_MERCADO_PAGO_CHECKOUT_URL;
     const preference = await createCheckoutPreference(body, e2eCheckoutUrl ? {
