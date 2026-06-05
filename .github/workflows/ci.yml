@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Environment encoding preflight
+        run: npm run env:check
+
       - name: Lint
         run: npm run lint
 
@@ -35,6 +38,40 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Export local Supabase env
+        run: |
+          supabase status -o env \
+            --override-name api.url=NEXT_PUBLIC_SUPABASE_URL \
+            --override-name auth.anon_key=NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY \
+            --override-name auth.service_role_key=SUPABASE_SECRET_KEY \
+            | sed -E 's/^([^=]+)="(.*)"$/\1=\2/' >> "$GITHUB_ENV"
+
+      - name: Reset local database
+        run: supabase db reset --local --yes
+
+      - name: Database tests
+        run: npm run supabase:db:test
+
+      - name: Database lint
+        run: npm run supabase:db:lint
+
+      - name: Install Playwright browser
+        run: npx playwright install chromium --with-deps
+
+      - name: E2E
+        env:
+          MP_ACCESS_TOKEN: e2e-mercado-pago-access-token
+          MP_WEBHOOK_SECRET: e2e-mercado-pago-webhook-secret
+        run: npm run test:e2e
 
       - name: Build
         run: npm run build
