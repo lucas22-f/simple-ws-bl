@@ -32,6 +32,24 @@ test.describe("admin", () => {
     await expect(page).toHaveURL(/\/admin\/login\?next=%2Fadmin%2Fproducts$/);
   });
 
+  test("logs out authenticated admins and requires re-authentication for protected pages", async ({ page }) => {
+    test.skip(!adminEmail || !adminPassword, "Set ADMIN_E2E_EMAIL and ADMIN_E2E_PASSWORD for authenticated admin logout.");
+
+    await page.goto("/admin/login");
+    await page.getByLabel("Email").fill(adminEmail!);
+    await page.getByLabel("Contraseña").fill(adminPassword!);
+    await page.getByRole("button", { name: "Iniciar sesión" }).click();
+
+    await page.goto("/admin/products");
+    await expect(page.getByRole("heading", { name: "Productos" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Cerrar sesión" }).click();
+    await expect(page).toHaveURL(/\/admin\/login$/);
+
+    await page.goto("/admin/products");
+    await expect(page).toHaveURL(/\/admin\/login\?next=%2Fadmin%2Fproducts$/);
+  });
+
   test("admin product CRUD and order fulfillment smoke", async ({ page }) => {
     test.skip(!adminEmail || !adminPassword, "Set ADMIN_E2E_EMAIL and ADMIN_E2E_PASSWORD for authenticated admin CRUD/order smoke.");
 
