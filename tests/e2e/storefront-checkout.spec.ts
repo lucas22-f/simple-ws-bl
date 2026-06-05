@@ -65,4 +65,47 @@ test.describe("storefront checkout", () => {
     await page.getByRole("button", { name: "Pagar con Mercado Pago" }).click();
     await expect(page).toHaveURL(/\/__e2e__\/mercado-pago\/checkout\?preference_id=e2e-preference$/);
   });
+
+  test("keeps keyboard focus inside the cart dialog and restores it to the opener", async ({ page }) => {
+    await page.goto("/catalog");
+
+    await page.locator(`a[href="/products/${seededProductSlug}"]`).click();
+    await page.getByRole("button", { name: "Agregar al carrito" }).click();
+    await page.waitForFunction(() => localStorage.getItem("bazar-online-cart")?.includes("550e8400-e29b-41d4-a716-446655440001"));
+
+    const cartOpener = page.getByRole("button", { name: /Abrir carrito, 1 productos/ });
+    await cartOpener.focus();
+    await expect(cartOpener).toBeFocused();
+
+    await cartOpener.press("Enter");
+
+    const dialog = page.getByRole("dialog", { name: "Resumen del carrito" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toBeFocused();
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          Array.from(document.body.children)
+            .filter((element) => !element.hasAttribute("data-cart-portal-root") && element.tagName !== "SCRIPT")
+            .every((element) => element.hasAttribute("inert") && element.getAttribute("aria-hidden") === "true"),
+        ),
+      )
+      .toBe(true);
+
+    await page.keyboard.press("Shift+Tab");
+    await expect(page.getByRole("link", { name: "Finalizar compra" })).toBeFocused();
+
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("button", { name: "Cerrar carrito" })).toBeFocused();
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(cartOpener).toBeFocused();
+
+    await cartOpener.press("Enter");
+    await expect(dialog).toBeFocused();
+    await page.getByRole("button", { name: "Cerrar carrito" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(cartOpener).toBeFocused();
+  });
 });

@@ -7,9 +7,97 @@ import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { formatMoney } from "@/lib/money";
 import { useCartStore } from "@/stores/cart-store";
 
+const CART_FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "[tabindex]:not([tabindex='-1'])",
+].join(",");
+
+type CartFocusTrapState = {
+  activeElement: Element | null;
+  dialogElement: HTMLElement;
+  focusableElements: HTMLElement[];
+  shiftKey: boolean;
+};
+
+export function getCartFocusableElements(container: ParentNode) {
+  return Array.from(container.querySelectorAll<HTMLElement>(CART_FOCUSABLE_SELECTOR)).filter((element) => {
+    const disabled = "disabled" in element && Boolean(element.disabled);
+    return !disabled && !element.inert && element.getAttribute("aria-hidden") !== "true";
+  });
+}
+
+export function getCartFocusTrapTarget({
+  activeElement,
+  dialogElement,
+  focusableElements,
+  shiftKey,
+}: CartFocusTrapState) {
+  if (focusableElements.length === 0) {
+    return dialogElement;
+  }
+
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+
+  if (shiftKey && (activeElement === firstElement || activeElement === dialogElement)) {
+    return lastElement;
+  }
+
+  if (!shiftKey && activeElement === lastElement) {
+    return firstElement;
+  }
+
+  if (!activeElement || (!dialogElement.contains(activeElement) && !focusableElements.includes(activeElement as HTMLElement))) {
+    return shiftKey ? lastElement : firstElement;
+  }
+
+  return null;
+}
+
+function isolateCartBackground(portalRoot: HTMLElement | null) {
+  if (!portalRoot) {
+    return () => {};
+  }
+
+  const siblings = Array.from(document.body.children).filter(
+    (element): element is HTMLElement =>
+      element instanceof HTMLElement && element !== portalRoot && element.tagName !== "SCRIPT",
+  );
+  const previousStates = siblings.map((element) => ({
+    ariaHidden: element.getAttribute("aria-hidden"),
+    element,
+    inert: element.inert,
+  }));
+
+  siblings.forEach((element) => {
+    element.inert = true;
+    element.setAttribute("aria-hidden", "true");
+  });
+
+  return () => {
+    previousStates.forEach(({ ariaHidden, element, inert }) => {
+      element.inert = inert;
+
+      if (ariaHidden === null) {
+        element.removeAttribute("aria-hidden");
+      } else {
+        element.setAttribute("aria-hidden", ariaHidden);
+      }
+    });
+  };
+}
+
 export function CartDrawer() {
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
+  const dialogRef = React.useRef<HTMLElement>(null);
+  const openerRef = React.useRef<HTMLButtonElement>(null);
+  const portalRootRef = React.useRef<HTMLDivElement>(null);
+  const restoreFocusTimeoutRef = React.useRef<number | null>(null);
   const items = useCartStore((state) => state.items);
   const subtotalCents = useCartStore((state) => state.getSubtotalCents());
   const updateQuantity = useCartStore((state) => state.updateQuantity);
@@ -17,9 +105,40 @@ export function CartDrawer() {
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
   const currency = items[0]?.currency ?? "ARS";
 
+  const restoreOpenerFocus = React.useCallback(() => {
+    if (restoreFocusTimeoutRef.current !== null) {
+      window.clearTimeout(restoreFocusTimeoutRef.current);
+    }
+
+    restoreFocusTimeoutRef.current = window.setTimeout(() => {
+      openerRef.current?.focus();
+      restoreFocusTimeoutRef.current = null;
+    }, 0);
+  }, []);
+
+  const closeCart = React.useCallback(
+    ({ restoreFocus = true }: { restoreFocus?: boolean } = {}) => {
+      setOpen(false);
+
+      if (restoreFocus) {
+        restoreOpenerFocus();
+      }
+    },
+    [restoreOpenerFocus],
+  );
+
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  React.useEffect(
+    () => () => {
+      if (restoreFocusTimeoutRef.current !== null) {
+        window.clearTimeout(restoreFocusTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   React.useEffect(() => {
     if (!open) {
@@ -27,20 +146,41 @@ export function CartDrawer() {
     }
 
     const previousOverflow = document.body.style.overflow;
+    const removeBackgroundIsolation = isolateCartBackground(portalRootRef.current);
+    const focusFrame = window.requestAnimationFrame(() => dialogRef.current?.focus());
     document.body.style.overflow = "hidden";
 
-    const closeOnEscape = (event: KeyboardEvent) => {
+    const handleDialogKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setOpen(false);
+        closeCart();
+        return;
+      }
+
+      if (event.key !== "Tab" || !dialogRef.current) {
+        return;
+      }
+
+      const target = getCartFocusTrapTarget({
+        activeElement: document.activeElement,
+        dialogElement: dialogRef.current,
+        focusableElements: getCartFocusableElements(dialogRef.current),
+        shiftKey: event.shiftKey,
+      });
+
+      if (target) {
+        event.preventDefault();
+        target.focus();
       }
     };
 
-    window.addEventListener("keydown", closeOnEscape);
+    document.addEventListener("keydown", handleDialogKeyDown);
     return () => {
+      window.cancelAnimationFrame(focusFrame);
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", closeOnEscape);
+      removeBackgroundIsolation();
+      document.removeEventListener("keydown", handleDialogKeyDown);
     };
-  }, [open]);
+  }, [closeCart, open]);
 
   return (
     <>
@@ -50,6 +190,7 @@ export function CartDrawer() {
         aria-label={`Abrir carrito, ${itemCount} productos`}
         aria-expanded={open}
         aria-controls="store-cart-drawer"
+        ref={openerRef}
         onClick={() => setOpen(true)}
       >
         <ShoppingBag className="h-5 w-5" aria-hidden="true" />
@@ -62,14 +203,14 @@ export function CartDrawer() {
 
       {mounted
         ? createPortal(
-            <>
+            <div data-cart-portal-root ref={portalRootRef}>
               <div
                 className={[
                   "fixed inset-0 z-[60] bg-foreground/25 backdrop-blur-sm transition-opacity duration-300",
                   open ? "opacity-100" : "pointer-events-none opacity-0",
                 ].join(" ")}
                 aria-hidden="true"
-                onClick={() => setOpen(false)}
+                onClick={() => closeCart()}
               />
 
               <aside
@@ -79,6 +220,8 @@ export function CartDrawer() {
                 aria-modal={open ? "true" : undefined}
                 role="dialog"
                 inert={!open}
+                ref={dialogRef}
+                tabIndex={-1}
                 className={[
                   "fixed inset-y-0 right-0 z-[70] flex w-full max-w-md flex-col border-l border-border bg-background shadow-[-16px_0_40px_rgb(37_26_18/0.16)] transition-transform duration-300 ease-out",
                   open ? "translate-x-0" : "translate-x-full",
@@ -94,7 +237,7 @@ export function CartDrawer() {
             type="button"
             className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border bg-card text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Cerrar carrito"
-            onClick={() => setOpen(false)}
+            onClick={() => closeCart()}
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -119,7 +262,7 @@ export function CartDrawer() {
                         <Link
                           className="line-clamp-2 font-heading text-base font-semibold text-foreground transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           href={`/products/${item.slug}`}
-                          onClick={() => setOpen(false)}
+                          onClick={() => closeCart({ restoreFocus: false })}
                         >
                           {item.name}
                         </Link>
@@ -171,7 +314,7 @@ export function CartDrawer() {
               <Link
                 className="mt-6 inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-5 text-sm font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 href="/catalog"
-                onClick={() => setOpen(false)}
+                onClick={() => closeCart({ restoreFocus: false })}
               >
                 Descubrir productos
               </Link>
@@ -189,14 +332,14 @@ export function CartDrawer() {
             <Link
               className="button-lift mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               href="/checkout"
-              onClick={() => setOpen(false)}
+              onClick={() => closeCart({ restoreFocus: false })}
             >
               Finalizar compra
             </Link>
           </div>
         ) : null}
               </aside>
-            </>,
+            </div>,
             document.body,
           )
         : null}
