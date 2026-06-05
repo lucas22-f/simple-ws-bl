@@ -1,10 +1,19 @@
 ﻿"use server";
 
 import { createHash, timingSafeEqual } from "node:crypto";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { actionError, initialFormActionState, type FormActionState } from "@/lib/form-state";
 import { resolveAdminLoginNextPath } from "@/server/admin/actions/login-path";
 import { getAdminRegistrationEnv } from "@/server/env";
+import {
+  ADMIN_REGISTRATION_EMAIL_RATE_LIMIT,
+  ADMIN_REGISTRATION_IP_RATE_LIMIT,
+  createDefaultRateLimiter,
+  getClientIpFromHeaders,
+  normalizeRateLimitIdentity,
+  type RateLimiter,
+} from "@/server/security/rate-limit";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 import { createSupabaseServerClient } from "@/server/supabase/server";
 
@@ -51,6 +60,8 @@ export type AdminRegistrationDependencies = {
   adminClient?: AdminRegistrationAdminClient;
   authClient?: AdminRegistrationAuthClient;
   getSecret?: () => string;
+  rateLimiter?: RateLimiter;
+  clientIp?: string;
   redirect?: (path: string) => never;
 };
 
@@ -90,6 +101,30 @@ function readAdminRegistrationSecret(dependencies: AdminRegistrationDependencies
   return getSecret().trim();
 }
 
+async function resolveAdminRegistrationClientIp(dependencies: AdminRegistrationDependencies) {
+  if (dependencies.clientIp) {
+    return normalizeRateLimitIdentity(dependencies.clientIp) || "unknown";
+  }
+
+  return getClientIpFromHeaders(await headers());
+}
+
+async function enforceAdminRegistrationRateLimit(email: string, dependencies: AdminRegistrationDependencies) {
+  const rateLimiter = dependencies.rateLimiter ?? createDefaultRateLimiter();
+  const clientIp = await resolveAdminRegistrationClientIp(dependencies);
+  const emailIdentity = normalizeRateLimitIdentity(email);
+  const results = await Promise.all([
+    rateLimiter.consume({ ...ADMIN_REGISTRATION_IP_RATE_LIMIT, identity: clientIp }),
+    rateLimiter.consume({ ...ADMIN_REGISTRATION_EMAIL_RATE_LIMIT, identity: emailIdentity }),
+  ]).catch(() => {
+    throw new Error(ADMIN_REGISTRATION_FAILURE);
+  });
+
+  if (results.some((result) => !result.allowed)) {
+    throw new Error(ADMIN_REGISTRATION_FAILURE);
+  }
+}
+
 export async function executeAdminRegistration(
   formData: FormData,
   dependencies: AdminRegistrationDependencies = {},
@@ -98,6 +133,8 @@ export async function executeAdminRegistration(
   if (Object.keys(fieldErrors).length > 0) {
     throw new Error("Revisá los datos del formulario");
   }
+
+  await enforceAdminRegistrationRateLimit(email, dependencies);
 
   const expectedSecret = readAdminRegistrationSecret(dependencies);
   if (!ownerSecretsMatch(secret, expectedSecret)) {
@@ -139,6 +176,7 @@ export async function executeAdminRegistration(
 export async function registerAdminAction(
   _previousState: FormActionState,
   formData: FormData,
+  dependencies: AdminRegistrationDependencies = {},
 ): Promise<FormActionState> {
   const { fieldErrors } = validateRegistrationForm(formData);
   if (Object.keys(fieldErrors).length > 0) {
@@ -146,7 +184,7 @@ export async function registerAdminAction(
   }
 
   try {
-    await executeAdminRegistration(formData);
+    await executeAdminRegistration(formData, dependencies);
     return initialFormActionState;
   } catch (error) {
     if (error instanceof Error && error.message === ADMIN_REGISTRATION_FAILURE) {

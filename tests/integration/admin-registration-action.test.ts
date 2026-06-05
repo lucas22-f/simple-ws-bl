@@ -7,7 +7,8 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-import { executeAdminRegistration } from "@/server/admin/actions/register";
+import { executeAdminRegistration, registerAdminAction } from "@/server/admin/actions/register";
+import type { RateLimiter } from "@/server/security/rate-limit";
 
 function buildRegistrationForm(input: { email?: string; password?: string; secret?: string; next?: string }) {
   const formData = new FormData();
@@ -38,6 +39,17 @@ function createRegistrationClients(options: { createUserError?: Error | null } =
   };
 }
 
+function createAllowingRateLimiter(): RateLimiter {
+  return {
+    consume: vi.fn(async () => ({
+      allowed: true,
+      retryAfterSeconds: 0,
+      remaining: 4,
+      resetAt: new Date("2026-06-05T12:00:00.000Z"),
+    })),
+  };
+}
+
 describe("admin registration action", () => {
   it("creates a confirmed auth user, promotes its profile to admin, signs in, and redirects safely", async () => {
     const clients = createRegistrationClients();
@@ -54,6 +66,8 @@ describe("admin registration action", () => {
       getSecret: () => "owner-secret",
       adminClient: clients.adminClient,
       authClient: clients.authClient,
+      rateLimiter: createAllowingRateLimiter(),
+      clientIp: "203.0.113.10",
       redirect: redirectTo,
     })).rejects.toThrow("redirect:/admin/products");
 
@@ -86,6 +100,8 @@ describe("admin registration action", () => {
       getSecret: () => "owner-secret",
       adminClient: clients.adminClient,
       authClient: clients.authClient,
+      rateLimiter: createAllowingRateLimiter(),
+      clientIp: "203.0.113.10",
       redirect: redirectTo,
     })).rejects.toThrow("redirect:/admin");
 
@@ -103,11 +119,91 @@ describe("admin registration action", () => {
       getSecret: () => "owner-secret",
       adminClient: clients.adminClient,
       authClient: clients.authClient,
+      rateLimiter: createAllowingRateLimiter(),
+      clientIp: "203.0.113.10",
     })).rejects.toThrow("No pudimos crear la cuenta de administrador");
 
     expect(clients.createUser).not.toHaveBeenCalled();
     expect(clients.upsert).not.toHaveBeenCalled();
     expect(clients.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("returns the generic failure before secret validation or user creation when the registration limit is exceeded", async () => {
+    const clients = createRegistrationClients();
+    const getSecret = vi.fn(() => "owner-secret");
+    const rateLimiter: RateLimiter = {
+      consume: vi.fn(async () => ({
+        allowed: false,
+        retryAfterSeconds: 120,
+        remaining: 0,
+        resetAt: new Date("2026-06-05T12:02:00.000Z"),
+      })),
+    };
+
+    await expect(executeAdminRegistration(buildRegistrationForm({
+      email: " Owner@Example.COM ",
+      password: "secure-password",
+      secret: "owner-secret",
+    }), {
+      getSecret,
+      adminClient: clients.adminClient,
+      authClient: clients.authClient,
+      rateLimiter,
+      clientIp: "203.0.113.10",
+    })).rejects.toThrow("No pudimos crear la cuenta de administrador");
+
+    expect(rateLimiter.consume).toHaveBeenCalledWith(expect.objectContaining({
+      bucket: "admin-registration:ip",
+      identity: "203.0.113.10",
+    }));
+    expect(rateLimiter.consume).toHaveBeenCalledWith(expect.objectContaining({
+      bucket: "admin-registration:email",
+      identity: "owner@example.com",
+    }));
+    expect(getSecret).not.toHaveBeenCalled();
+    expect(clients.createUser).not.toHaveBeenCalled();
+    expect(clients.upsert).not.toHaveBeenCalled();
+    expect(clients.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("maps a rate-limited registration action to the generic form error", async () => {
+    const clients = createRegistrationClients();
+    const getSecret = vi.fn(() => "owner-secret");
+    const rateLimiter: RateLimiter = {
+      consume: vi.fn(async () => ({
+        allowed: false,
+        retryAfterSeconds: 120,
+        remaining: 0,
+        resetAt: new Date("2026-06-05T12:02:00.000Z"),
+      })),
+    };
+
+    await expect(registerAdminAction(
+      { status: "idle" },
+      buildRegistrationForm({
+        email: "owner@example.com",
+        password: "secure-password",
+        secret: "owner-secret",
+      }),
+      {
+        getSecret,
+        adminClient: clients.adminClient,
+        authClient: clients.authClient,
+        rateLimiter,
+        clientIp: "203.0.113.10",
+      },
+    )).resolves.toEqual({
+      status: "error",
+      message: "No pudimos crear la cuenta de administrador. Revisá los datos e intentá nuevamente.",
+      fieldErrors: {
+        email: " ",
+        password: " ",
+        secret: " ",
+      },
+    });
+
+    expect(getSecret).not.toHaveBeenCalled();
+    expect(clients.createUser).not.toHaveBeenCalled();
   });
 
   it("does not promote or sign in when Supabase rejects a duplicate email", async () => {
@@ -121,6 +217,8 @@ describe("admin registration action", () => {
       getSecret: () => "owner-secret",
       adminClient: clients.adminClient,
       authClient: clients.authClient,
+      rateLimiter: createAllowingRateLimiter(),
+      clientIp: "203.0.113.10",
     })).rejects.toThrow("No pudimos crear la cuenta de administrador");
 
     expect(clients.createUser).toHaveBeenCalledOnce();
