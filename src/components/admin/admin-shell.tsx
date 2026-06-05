@@ -4,6 +4,7 @@ import * as React from "react";
 import { usePathname } from "next/navigation";
 import { NavigationLink } from "@/components/ui/navigation-link";
 import { cn } from "@/lib/utils";
+import { logoutAction } from "@/server/admin/actions/logout";
 
 type AdminShellProps = {
   title: string;
@@ -53,6 +54,15 @@ export function AdminShell({ title, description, eyebrow = "Admin", children }: 
             >
               Ver tienda
             </NavigationLink>
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                aria-label="Cerrar sesión de administración"
+                className="button-lift inline-flex min-h-10 items-center justify-center rounded-full border border-destructive/30 bg-background px-4 text-sm font-semibold text-destructive transition hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Cerrar sesión
+              </button>
+            </form>
           </div>
         </div>
 
