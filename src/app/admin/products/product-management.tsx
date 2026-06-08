@@ -10,7 +10,7 @@ import { FormLoadingOverlay } from "@/components/ui/loading-overlay";
 import { PaginationControls } from "@/components/ui/pagination";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { initialFormActionState, type FormActionState } from "@/lib/form-state";
-import { compressProductImage, formatFileSize } from "@/lib/image-compression";
+import { compressProductImage, formatFileSize, getProductImageCompressionErrorMessage } from "@/lib/image-compression";
 import type { PaginationState } from "@/lib/pagination";
 import type { AdminProduct } from "@/server/products/queries";
 
@@ -50,7 +50,7 @@ function getFormDataFile(formData: FormData, fieldName: string) {
   return value instanceof File && value.size > 0 ? value : null;
 }
 
-function ProductImageField({ status }: { status?: string }) {
+function ProductImageField({ status, tone }: { status?: string; tone?: "neutral" | "error" | "success" }) {
   return (
     <label className="grid gap-2 rounded-2xl border border-dashed bg-muted/35 p-4 text-sm font-medium sm:col-span-2">
       <span className="inline-flex items-center gap-2">
@@ -67,6 +67,7 @@ function ProductImageField({ status }: { status?: string }) {
       <FieldMessage
         id="product-image-help"
         message={status ?? "La imagen se optimiza automáticamente a WebP, máximo 1200px, antes de subirla al bucket."}
+        tone={tone}
       />
     </label>
   );
@@ -122,16 +123,22 @@ function ProductFields({ product }: { product?: AdminProduct }) {
 
 function ProductCreateForm({ action }: { action: ProductFormAction }) {
   const { state, formAction } = useProductFormAction(action);
-  const [imageStatus, setImageStatus] = React.useState<string>();
+  const [imageStatus, setImageStatus] = React.useState<{ message: string; tone?: "neutral" | "error" | "success" }>();
   const createAction = typeof formAction === "function"
     ? async (formData: FormData) => {
         const image = getFormDataFile(formData, "productImage");
 
         if (image) {
-          setImageStatus(`Optimizando ${formatFileSize(image.size)} antes de subir...`);
-          const compressedImage = await compressProductImage(image);
-          formData.set("productImage", compressedImage);
-          setImageStatus(`Lista para subir: ${formatFileSize(compressedImage.size)} en WebP.`);
+          setImageStatus({ message: `Optimizando ${formatFileSize(image.size)} antes de subir...` });
+
+          try {
+            const compressedImage = await compressProductImage(image);
+            formData.set("productImage", compressedImage);
+            setImageStatus({ message: `Lista para subir: ${formatFileSize(compressedImage.size)} en WebP.`, tone: "success" });
+          } catch (error) {
+            setImageStatus({ message: getProductImageCompressionErrorMessage(error), tone: "error" });
+            return;
+          }
         }
 
         formAction(formData);
@@ -143,7 +150,7 @@ function ProductCreateForm({ action }: { action: ProductFormAction }) {
       <FormToast state={state} successTitle="Producto guardado" />
       <FormLoadingOverlay title="Guardando producto" description="Optimizamos la imagen, creamos el producto y actualizamos el catálogo." />
       <ProductFields />
-      <ProductImageField status={imageStatus} />
+      <ProductImageField status={imageStatus?.message} tone={imageStatus?.tone} />
       <SubmitButton className="button-lift min-h-11 sm:col-span-2" pendingLabel="Guardando producto...">
         <PackagePlus className="h-4 w-4" aria-hidden="true" />
         Guardar producto

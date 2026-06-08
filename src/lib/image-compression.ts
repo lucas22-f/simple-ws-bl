@@ -58,6 +58,14 @@ export async function compressProductImage(file: File, options: CompressionOptio
   });
 }
 
+export function getProductImageCompressionErrorMessage(error: unknown) {
+  if (error instanceof Error && /decode|decoded|source image/i.test(error.message)) {
+    return "No pudimos leer la imagen. Probá con otro JPG, PNG o WebP.";
+  }
+
+  return "No pudimos optimizar la imagen. Probá con otro archivo.";
+}
+
 export function formatFileSize(bytes: number) {
   if (bytes < 1024 * 1024) {
     return `${Math.max(1, Math.round(bytes / 1024))} KB`;
