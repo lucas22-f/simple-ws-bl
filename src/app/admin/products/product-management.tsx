@@ -51,18 +51,27 @@ function getFormDataFile(formData: FormData, fieldName: string) {
 }
 
 function ProductImageField({ status, tone }: { status?: string; tone?: "neutral" | "error" | "success" }) {
+  const [selectedFileName, setSelectedFileName] = React.useState("Sin archivo seleccionado");
+
   return (
     <label className="grid gap-2 rounded-2xl border border-dashed bg-muted/35 p-4 text-sm font-medium sm:col-span-2">
       <span className="inline-flex items-center gap-2">
         <ImagePlus className="h-4 w-4 text-primary" aria-hidden="true" />
         Imagen del producto
       </span>
-      <input
-        className="min-h-11 rounded-xl border bg-card px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground"
-        name="productImage"
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-      />
+      <span className="relative grid min-h-11 gap-2 rounded-xl border bg-card p-2 transition focus-within:ring-2 focus-within:ring-ring sm:flex sm:items-center">
+        <span className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground">
+          Seleccionar archivo
+        </span>
+        <span className="min-w-0 truncate px-1 text-sm font-normal text-muted-foreground">{selectedFileName}</span>
+        <input
+          className="absolute inset-0 cursor-pointer opacity-0"
+          name="productImage"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(event) => setSelectedFileName(event.currentTarget.files?.[0]?.name ?? "Sin archivo seleccionado")}
+        />
+      </span>
       <input name="productImageAlt" type="hidden" value="" />
       <FieldMessage
         id="product-image-help"
