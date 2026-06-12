@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { calculatePublishedPriceCents, parseCurrencyAmountToCents } from "@/lib/money";
 import { assertAdminActionAccess, type AdminActionAuthOptions } from "@/server/admin/actions/auth";
 import { buildProductImagePath, PRODUCT_IMAGE_ALLOWED_TYPES, PRODUCT_IMAGE_MAX_BYTES, PRODUCT_IMAGES_BUCKET } from "@/server/admin/storage";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
@@ -10,7 +11,9 @@ export const productInputSchema = z.object({
   name: z.string().trim().min(2),
   slug: z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   description: z.string().trim().default(""),
-  priceCents: z.coerce.number().int().nonnegative(),
+  basePriceAmount: z.union([z.string().trim().min(1), z.coerce.number().nonnegative()]).optional(),
+  priceCents: z.coerce.number().int().nonnegative().optional(),
+  applyMercadoPagoSurcharge: z.union([z.boolean(), z.literal("true"), z.literal("false")]).default(false).transform((value) => value === true || value === "true"),
   currency: z.string().trim().length(3).default("ARS"),
   active: z.union([z.boolean(), z.literal("true"), z.literal("false")]).default(false).transform((value) => value === true || value === "true"),
   featured: z.union([z.boolean(), z.literal("true"), z.literal("false")]).default(false).transform((value) => value === true || value === "true"),
@@ -41,13 +44,30 @@ type ProductActionOptions<TRepository> = AdminActionAuthOptions & {
   repository?: TRepository;
 };
 
+function getBasePriceCents(product: ProductInput) {
+  if (product.basePriceAmount !== undefined) {
+    return parseCurrencyAmountToCents(product.basePriceAmount);
+  }
+
+  if (product.priceCents !== undefined) {
+    return product.priceCents;
+  }
+
+  throw new Error("Producto inválido");
+}
+
 function toProductRow(product: ProductInput) {
+  const basePriceCents = getBasePriceCents(product);
+  const priceCents = calculatePublishedPriceCents(basePriceCents, product.applyMercadoPagoSurcharge);
+
   return {
     category_id: product.categoryId,
     name: product.name,
     slug: product.slug,
     description: product.description,
-    price_cents: product.priceCents,
+    base_price_cents: basePriceCents,
+    apply_mercado_pago_surcharge: product.applyMercadoPagoSurcharge,
+    price_cents: priceCents,
     currency: product.currency,
     active: product.active,
     featured: product.featured,
@@ -61,7 +81,8 @@ function normalizeRawProductInput(rawInput: unknown) {
       name: rawInput.get("name"),
       slug: rawInput.get("slug"),
       description: rawInput.get("description") ?? "",
-      priceCents: rawInput.get("priceCents"),
+      basePriceAmount: rawInput.get("basePriceAmount") ?? rawInput.get("priceAmount") ?? rawInput.get("priceCents"),
+      applyMercadoPagoSurcharge: rawInput.get("applyMercadoPagoSurcharge") === "true",
       currency: rawInput.get("currency") ?? "ARS",
       active: rawInput.get("active") === "true",
       featured: rawInput.get("featured") === "true",
@@ -164,6 +185,11 @@ export function createSupabaseProductsRepository(): ProductsRepository {
 function parseProduct(rawInput: unknown) {
   const parsed = productInputSchema.safeParse(normalizeRawProductInput(rawInput));
   if (!parsed.success) throw new Error("Producto inválido");
+  try {
+    getBasePriceCents(parsed.data);
+  } catch {
+    throw new Error("Producto inválido");
+  }
   return parsed.data;
 }
 

@@ -11,6 +11,7 @@ import { PaginationControls } from "@/components/ui/pagination";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { initialFormActionState, type FormActionState } from "@/lib/form-state";
 import { compressProductImage, formatFileSize, getProductImageCompressionErrorMessage } from "@/lib/image-compression";
+import { calculatePublishedPriceCents, formatCentsAsCurrency, MERCADO_PAGO_SURCHARGE_PERCENT, parseCurrencyAmountToCents } from "@/lib/money";
 import type { PaginationState } from "@/lib/pagination";
 import type { AdminProduct } from "@/server/products/queries";
 
@@ -27,10 +28,6 @@ type AdminProductsViewProps = {
 };
 
 const fieldClassName = "min-h-11 rounded-xl border bg-card px-3 py-2 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring";
-
-function formatPrice(priceCents: number, currency: string) {
-  return new Intl.NumberFormat("es-AR", { style: "currency", currency, maximumFractionDigits: 2 }).format(priceCents / 100);
-}
 
 function useProductFormAction(action: ProductFormAction) {
   const isEnhancedAction = typeof action === "function";
@@ -93,7 +90,65 @@ function ProductStatus({ active, featured }: { active: boolean; featured: boolea
   );
 }
 
+function getPriceInputValue(product?: AdminProduct) {
+  if (!product) {
+    return "";
+  }
+
+  return (product.basePriceCents / 100).toFixed(2);
+}
+
+function ProductPricePreview({ basePriceAmount, applySurcharge, currency }: { basePriceAmount: string; applySurcharge: boolean; currency: string }) {
+  let basePriceCents = 0;
+  let priceIsValid = true;
+
+  try {
+    basePriceCents = basePriceAmount.trim() ? parseCurrencyAmountToCents(basePriceAmount) : 0;
+  } catch {
+    priceIsValid = false;
+  }
+
+  const publishedPriceCents = priceIsValid ? calculatePublishedPriceCents(basePriceCents, applySurcharge) : 0;
+  const surchargeCents = Math.max(0, publishedPriceCents - basePriceCents);
+
+  return (
+    <div className="grid gap-3 rounded-2xl border border-border bg-muted/35 p-4 text-sm sm:col-span-2" aria-live="polite">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="font-semibold text-foreground">Vista previa del precio publicado</p>
+          <p className="mt-1 text-muted-foreground">El precio base se guarda en centavos internamente; el catálogo y Mercado Pago usan el precio publicado.</p>
+        </div>
+        <span className="rounded-full bg-card px-3 py-1 text-xs font-semibold text-primary">
+          Recargo {MERCADO_PAGO_SURCHARGE_PERCENT}%
+        </span>
+      </div>
+      {priceIsValid ? (
+        <dl className="grid gap-2 sm:grid-cols-3">
+          <div className="rounded-xl bg-card p-3">
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Base</dt>
+            <dd className="mt-1 font-semibold">{formatCentsAsCurrency(basePriceCents, currency)}</dd>
+          </div>
+          <div className="rounded-xl bg-card p-3">
+            <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Recargo</dt>
+            <dd className="mt-1 font-semibold">{formatCentsAsCurrency(surchargeCents, currency)}</dd>
+          </div>
+          <div className="rounded-xl bg-primary p-3 text-primary-foreground">
+            <dt className="text-xs uppercase tracking-[0.14em] opacity-80">Publicado</dt>
+            <dd className="mt-1 font-semibold">{formatCentsAsCurrency(publishedPriceCents, currency)}</dd>
+          </div>
+        </dl>
+      ) : (
+        <p className="rounded-xl bg-card p-3 font-medium text-primary">Ingresá un precio válido para calcular la vista previa.</p>
+      )}
+    </div>
+  );
+}
+
 function ProductFields({ product }: { product?: AdminProduct }) {
+  const [basePriceAmount, setBasePriceAmount] = React.useState(getPriceInputValue(product));
+  const [applySurcharge, setApplySurcharge] = React.useState(product?.applyMercadoPagoSurcharge ?? false);
+  const currency = product?.currency ?? "ARS";
+
   return (
     <>
       <label className="grid gap-1 text-sm font-medium">
@@ -107,9 +162,17 @@ function ProductFields({ product }: { product?: AdminProduct }) {
         <FieldMessage id="product-slug-help" message="Solo minúsculas, números y guiones. Sin espacios." />
       </label>
       <label className="grid gap-1 text-sm font-medium">
-        Precio en centavos
-        <input className={fieldClassName} name="priceCents" placeholder="1250000" type="number" min="0" defaultValue={product?.priceCents} required />
-        <FieldMessage id="product-price-help" message="Guardamos centavos para evitar errores con decimales." />
+        Precio base
+        <input
+          className={fieldClassName}
+          name="basePriceAmount"
+          placeholder="12500,00"
+          inputMode="decimal"
+          value={basePriceAmount}
+          onChange={(event) => setBasePriceAmount(event.currentTarget.value)}
+          required
+        />
+        <FieldMessage id="product-price-help" message="Ingresá el importe normal, sin convertirlo a centavos." />
       </label>
       <label className="grid gap-1 text-sm font-medium">
         Stock
@@ -126,6 +189,21 @@ function ProductFields({ product }: { product?: AdminProduct }) {
       <label className="flex items-center gap-2 text-sm">
         <input name="featured" type="checkbox" value="true" defaultChecked={product?.featured ?? false} /> Destacado
       </label>
+      <label className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-sm sm:col-span-2">
+        <input
+          className="mt-1 h-4 w-4 accent-primary"
+          name="applyMercadoPagoSurcharge"
+          type="checkbox"
+          value="true"
+          checked={applySurcharge}
+          onChange={(event) => setApplySurcharge(event.currentTarget.checked)}
+        />
+        <span>
+          <span className="block font-semibold">Aplicar recargo de Mercado Pago</span>
+          <span className="mt-1 block text-muted-foreground">Suma automáticamente el {MERCADO_PAGO_SURCHARGE_PERCENT}% al precio publicado.</span>
+        </span>
+      </label>
+      <ProductPricePreview basePriceAmount={basePriceAmount} applySurcharge={applySurcharge} currency={currency} />
     </>
   );
 }
@@ -313,7 +391,7 @@ export function AdminProductsView({ products, pagination, actions }: AdminProduc
                     </div>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm md:text-right">
                       <span className="text-muted-foreground">Precio</span>
-                      <strong>{formatPrice(product.priceCents, product.currency)}</strong>
+                      <strong>{formatCentsAsCurrency(product.priceCents, product.currency)}</strong>
                       <span className="text-muted-foreground">Stock</span>
                       <strong>{product.stockQuantity ?? "Sin control"}</strong>
                     </div>

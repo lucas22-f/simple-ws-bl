@@ -18,9 +18,9 @@ const products = [
     name: "Mate camionero",
     slug: "mate-camionero",
     description: "Mate grande",
-    priceCents: 12500,
+    priceCents: 13750,
     basePriceCents: 12500,
-    applyMercadoPagoSurcharge: false,
+    applyMercadoPagoSurcharge: true,
     currency: "ARS",
     active: true,
     featured: true,
@@ -54,6 +54,11 @@ describe("AdminProductsView", () => {
     expect(html).toContain("Pausado");
     expect(html).toContain("Actualizar producto");
     expect(html).toContain("Archivar producto");
+    expect(html).toContain("Precio base");
+    expect(html).toContain("Aplicar recargo de Mercado Pago");
+    expect(html).toContain("Vista previa del precio publicado");
+    expect(html).toContain("Publicado");
+    expect(html).toContain("137,50");
     expect(html).toContain("Imagen del producto");
     expect(html).toContain("optimiza automáticamente");
     expect(html).toContain("Ver imagen");
