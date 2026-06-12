@@ -1,8 +1,14 @@
-﻿import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { archiveProductAction, createProductAction, updateProductAction } from "@/server/admin/actions/products";
+const supabaseAdmin = vi.hoisted(() => ({
+  createSupabaseAdminClient: vi.fn(),
+}));
+
+vi.mock("@/server/supabase/admin", () => supabaseAdmin);
+
+import { archiveProductAction, createProductAction, createSupabaseProductsRepository, updateProductAction } from "@/server/admin/actions/products";
 import { updateOrderFulfillmentStatusAction, type OrdersRepository } from "@/server/admin/actions/orders";
 import { updateSettingsAction } from "@/server/admin/actions/settings";
 import { buildProductImagePath } from "@/server/admin/storage";
@@ -17,11 +23,11 @@ describe("admin product actions", () => {
       name: " Mate Camionero ",
       slug: "mate-camionero",
       description: "Clásico",
-      priceCents: "12500",
+      basePriceAmount: "125.00",
       active: "true",
       featured: false,
       stockQuantity: "8",
-    }, { repository, assertAdmin: allowAdmin })).resolves.toMatchObject({ id: "prod-1", name: "Mate Camionero", priceCents: 12500, active: true, stockQuantity: 8 });
+    }, { repository, assertAdmin: allowAdmin })).resolves.toMatchObject({ id: "prod-1", name: "Mate Camionero", basePriceAmount: "125.00", active: true, stockQuantity: 8 });
 
     expect(repository.createProduct).toHaveBeenCalledWith(expect.objectContaining({ name: "Mate Camionero", slug: "mate-camionero" }));
   });
@@ -29,10 +35,26 @@ describe("admin product actions", () => {
   it("rejects unsafe product payloads instead of trusting admin form data", async () => {
     const repository = { createProduct: vi.fn() };
 
-    await expect(createProductAction({ name: "x", slug: "../bad", priceCents: -1 }, { repository, assertAdmin: allowAdmin })).rejects.toThrow("Producto inválido");
+    await expect(createProductAction({ name: "x", slug: "../bad", basePriceAmount: "-1" }, { repository, assertAdmin: allowAdmin })).rejects.toThrow("Producto inválido");
     expect(repository.createProduct).not.toHaveBeenCalled();
   });
 
+  it("rejects invalid product money input before repository mutation", async () => {
+    const repository = { createProduct: vi.fn() };
+
+    await expect(createProductAction({
+      name: "Mate",
+      slug: "mate",
+      basePriceAmount: "abc",
+    }, { repository, assertAdmin: allowAdmin })).rejects.toThrow("Producto inválido");
+    await expect(createProductAction({
+      name: "Mate",
+      slug: "mate",
+      basePriceAmount: "-1",
+    }, { repository, assertAdmin: allowAdmin })).rejects.toThrow("Producto inválido");
+
+    expect(repository.createProduct).not.toHaveBeenCalled();
+  });
   it("rejects non-admin product creates before repository mutation", async () => {
     const repository = { createProduct: vi.fn() };
     const assertAdmin = vi.fn(async () => {
@@ -43,7 +65,7 @@ describe("admin product actions", () => {
       name: "Mate",
       slug: "mate",
       description: "",
-      priceCents: 1000,
+      basePriceAmount: "10.00",
     }, { repository, assertAdmin })).rejects.toThrow("No autorizado");
 
     expect(assertAdmin).toHaveBeenCalledOnce();
@@ -61,7 +83,7 @@ describe("admin product actions", () => {
     formData.set("name", "Mate");
     formData.set("slug", "mate");
     formData.set("description", "");
-    formData.set("priceCents", "1000");
+    formData.set("basePriceAmount", "10.00");
     formData.set("productImage", image);
     formData.set("productImageAlt", "Mate listo para cebar");
 
@@ -75,6 +97,34 @@ describe("admin product actions", () => {
     );
   });
 
+  it("converts normal currency product prices to persisted cents and published surcharge price", async () => {
+    const single = vi.fn(async () => ({ data: { id: "prod-1" }, error: null }));
+    const select = vi.fn(() => ({ single }));
+    const insert = vi.fn(() => ({ select }));
+    const from = vi.fn(() => ({ insert }));
+    supabaseAdmin.createSupabaseAdminClient.mockReturnValue({ from });
+    const repository = createSupabaseProductsRepository();
+
+    await expect(repository.createProduct({
+      name: "Mate premium",
+      slug: "mate-premium",
+      description: "",
+      basePriceAmount: "200.00",
+      applyMercadoPagoSurcharge: true,
+      currency: "ARS",
+      active: true,
+      featured: false,
+      stockQuantity: null,
+      categoryId: null,
+    })).resolves.toEqual({ id: "prod-1" });
+
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({
+      base_price_cents: 20000,
+      apply_mercado_pago_surcharge: true,
+      price_cents: 22000,
+    }));
+  });
+
   it("builds product image paths with deterministic safe segments only", () => {
     expect(buildProductImagePath("550e8400-e29b-41d4-a716-446655440000", { uuidFactory: () => "11111111-1111-4111-8111-111111111111" }))
       .toBe("products/550e8400-e29b-41d4-a716-446655440000/11111111-1111-4111-8111-111111111111");
@@ -84,9 +134,9 @@ describe("admin product actions", () => {
   it("validates product updates server-side", async () => {
     const repository = { updateProduct: vi.fn(async (id, product) => ({ id, ...product })) };
 
-    await expect(updateProductAction("550e8400-e29b-41d4-a716-446655440000", { name: "Yerbera", slug: "yerbera", description: "", priceCents: 5000 }, { repository, assertAdmin: allowAdmin }))
+    await expect(updateProductAction("550e8400-e29b-41d4-a716-446655440000", { name: "Yerbera", slug: "yerbera", description: "", basePriceAmount: "50.00" }, { repository, assertAdmin: allowAdmin }))
       .resolves.toMatchObject({ id: "550e8400-e29b-41d4-a716-446655440000", name: "Yerbera" });
-    await expect(updateProductAction("bad/id", { name: "Yerbera", slug: "yerbera", priceCents: 5000 }, { repository, assertAdmin: allowAdmin })).rejects.toThrow("ID de producto inválido");
+    await expect(updateProductAction("bad/id", { name: "Yerbera", slug: "yerbera", basePriceAmount: "50.00" }, { repository, assertAdmin: allowAdmin })).rejects.toThrow("ID de producto inválido");
   });
 
   it("archives products by validated id", async () => {
