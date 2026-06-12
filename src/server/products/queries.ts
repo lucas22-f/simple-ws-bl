@@ -46,7 +46,11 @@ export type StorefrontProduct = {
 export type AdminProductRow = Pick<
   ProductRow,
   "id" | "name" | "slug" | "description" | "price_cents" | "currency" | "active" | "featured" | "stock_quantity"
-> & Pick<ProductRow, "product_images">;
+> &
+  Pick<ProductRow, "product_images"> & {
+    base_price_cents: number | null;
+    apply_mercado_pago_surcharge: boolean | null;
+  };
 
 export type AdminProduct = {
   id: string;
@@ -54,6 +58,8 @@ export type AdminProduct = {
   slug: string;
   description: string;
   priceCents: number;
+  basePriceCents: number;
+  applyMercadoPagoSurcharge: boolean;
   currency: string;
   active: boolean;
   featured: boolean;
@@ -145,6 +151,8 @@ export function mapAdminProductRow(row: AdminProductRow): AdminProduct {
     slug: row.slug,
     description: row.description,
     priceCents: row.price_cents,
+    basePriceCents: row.base_price_cents ?? row.price_cents,
+    applyMercadoPagoSurcharge: row.apply_mercado_pago_surcharge ?? false,
     currency: row.currency,
     active: row.active,
     featured: row.featured,
@@ -195,9 +203,12 @@ export function createSupabaseAdminProductQueryClient(): AdminProductQueryClient
       const supabase = createSupabaseAdminClient();
       let query = supabase
         .from("products")
-        .select("id, name, slug, description, price_cents, currency, active, featured, stock_quantity, product_images(storage_path, alt_text, sort_order, active)", {
-          count: pagination.pageSize ? "exact" : undefined,
-        })
+        .select(
+          "id, name, slug, description, price_cents, base_price_cents, apply_mercado_pago_surcharge, currency, active, featured, stock_quantity, product_images(storage_path, alt_text, sort_order, active)",
+          {
+            count: pagination.pageSize ? "exact" : undefined,
+          },
+        )
         .order("created_at", { ascending: false });
 
       if (pagination.pageSize) {
