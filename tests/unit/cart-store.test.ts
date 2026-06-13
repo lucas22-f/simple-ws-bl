@@ -78,6 +78,22 @@ describe("cart store", () => {
     restoredStore.getState().clearCart();
     expect(restoredStore.getState().items).toEqual([]);
   });
+
+  it("removes purchased quantities without clearing unpaid cart items", () => {
+    const store = createCartStore({ storage: createMemoryStorage() });
+
+    store.getState().addItem(mate, 3);
+    store.getState().addItem(bombilla, 2);
+
+    store.getState().removePurchasedItems([
+      { productId: mate.productId, quantity: 2 },
+      { productId: bombilla.productId, quantity: 5 },
+      { productId: "unknown-product", quantity: 1 },
+    ]);
+
+    expect(store.getState().items).toEqual([{ ...mate, quantity: 1 }]);
+    expect(store.getState().getSubtotalCents()).toBe(12500);
+  });
 });
 
 
