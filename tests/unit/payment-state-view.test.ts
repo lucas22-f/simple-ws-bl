@@ -88,5 +88,26 @@ describe("Payment state visual slice", () => {
       );
     }
   });
+
+  it("mounts cart synchronization only on the success return page", () => {
+    const repoRoot = process.cwd();
+    const successPage = readFileSync(path.join(repoRoot, "src/app/(store)/payment/success/page.tsx"), "utf8");
+    const pendingPage = readFileSync(path.join(repoRoot, "src/app/(store)/payment/pending/page.tsx"), "utf8");
+    const failurePage = readFileSync(path.join(repoRoot, "src/app/(store)/payment/failure/page.tsx"), "utf8");
+
+    expect(successPage).toContain("PaymentReturnCartSync");
+    expect(pendingPage).not.toContain("PaymentReturnCartSync");
+    expect(failurePage).not.toContain("PaymentReturnCartSync");
+  });
+
+  it("keeps payment-return cart sync bounded and retry-safe", () => {
+    const repoRoot = process.cwd();
+    const syncComponent = readFileSync(path.join(repoRoot, "src/components/store/payment-return-cart-sync.tsx"), "utf8");
+
+    expect(syncComponent).toContain("paymentReturnMaxAttempts");
+    expect(syncComponent).toContain("scheduleRetry");
+    expect(syncComponent).toContain("!response.ok");
+    expect(syncComponent).toContain('result.paymentStatus === "paid"');
+  });
 });
 

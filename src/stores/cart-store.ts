@@ -21,11 +21,17 @@ export type CartItem = CartItemSnapshot & {
   quantity: number;
 };
 
+export type PurchasedCartItem = {
+  productId: string;
+  quantity: number;
+};
+
 type CartState = {
   items: CartItem[];
   addItem: (item: CartItemSnapshot, quantity?: number) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   removeItem: (productId: string) => void;
+  removePurchasedItems: (items: PurchasedCartItem[]) => void;
   clearCart: () => void;
   getSubtotalCents: () => number;
 };
@@ -93,6 +99,31 @@ export function createCartStore(options: { storage?: CartStorage } = {}) {
           }));
         },
         removeItem: (productId) => set((state) => ({ items: state.items.filter((item) => item.productId !== productId) })),
+        removePurchasedItems: (purchasedItems) => {
+          const purchasedQuantities = new Map<string, number>();
+
+          for (const item of purchasedItems) {
+            const quantity = normalizeQuantity(item.quantity);
+            if (quantity <= 0) {
+              continue;
+            }
+
+            purchasedQuantities.set(item.productId, (purchasedQuantities.get(item.productId) ?? 0) + quantity);
+          }
+
+          if (purchasedQuantities.size === 0) {
+            return;
+          }
+
+          set((state) => ({
+            items: state.items.flatMap((item) => {
+              const purchasedQuantity = purchasedQuantities.get(item.productId) ?? 0;
+              const nextQuantity = item.quantity - purchasedQuantity;
+
+              return nextQuantity > 0 ? [{ ...item, quantity: nextQuantity }] : [];
+            }),
+          }));
+        },
         clearCart: () => set({ items: [] }),
         getSubtotalCents: () => calculateSubtotalCents(get().items),
       }),
