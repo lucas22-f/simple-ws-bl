@@ -10,7 +10,7 @@ import { FormLoadingOverlay } from "@/components/ui/loading-overlay";
 import { PaginationControls } from "@/components/ui/pagination";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { initialFormActionState, type FormActionState } from "@/lib/form-state";
-import { compressProductImage, formatFileSize, getProductImageCompressionErrorMessage } from "@/lib/image-compression";
+import { PRODUCT_IMAGE_ACCEPT_ATTRIBUTE, compressProductImage, formatFileSize, getProductImageCompressionErrorMessage } from "@/lib/image-compression";
 import { calculatePublishedPriceCents, formatCentsAsCurrency, MERCADO_PAGO_SURCHARGE_PERCENT, parseCurrencyAmountToCents } from "@/lib/money";
 import type { PaginationState } from "@/lib/pagination";
 import type { AdminProduct } from "@/server/products/queries";
@@ -65,7 +65,7 @@ function ProductImageField({ status, tone }: { status?: string; tone?: "neutral"
           className="absolute inset-0 cursor-pointer opacity-0"
           name="productImage"
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept={PRODUCT_IMAGE_ACCEPT_ATTRIBUTE}
           onChange={(event) => setSelectedFileName(event.currentTarget.files?.[0]?.name ?? "Sin archivo seleccionado")}
         />
       </span>

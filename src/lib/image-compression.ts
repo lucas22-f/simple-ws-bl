@@ -1,4 +1,6 @@
 export const PRODUCT_IMAGE_TARGET_TYPE = "image/webp";
+export const PRODUCT_IMAGE_ACCEPTED_INPUT_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", ".heic", ".heif"] as const;
+export const PRODUCT_IMAGE_ACCEPT_ATTRIBUTE = PRODUCT_IMAGE_ACCEPTED_INPUT_TYPES.join(",");
 export const PRODUCT_IMAGE_MAX_EDGE = 1200;
 export const PRODUCT_IMAGE_QUALITY = 0.78;
 
@@ -60,7 +62,7 @@ export async function compressProductImage(file: File, options: CompressionOptio
 
 export function getProductImageCompressionErrorMessage(error: unknown) {
   if (error instanceof Error && /decode|decoded|source image/i.test(error.message)) {
-    return "No pudimos leer la imagen. Probá con otro JPG, PNG o WebP.";
+    return "No pudimos leer la imagen. Probá con otro JPG, PNG, WebP, HEIC o HEIF.";
   }
 
   return "No pudimos optimizar la imagen. Probá con otro archivo.";
