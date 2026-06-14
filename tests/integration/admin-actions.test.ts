@@ -9,7 +9,7 @@ const supabaseAdmin = vi.hoisted(() => ({
 vi.mock("@/server/supabase/admin", () => supabaseAdmin);
 
 import { archiveProductAction, createProductAction, createSupabaseProductsRepository, updateProductAction } from "@/server/admin/actions/products";
-import { updateOrderFulfillmentStatusAction, type OrdersRepository } from "@/server/admin/actions/orders";
+import { archiveOrderAction, updateOrderFulfillmentStatusAction, type OrdersRepository } from "@/server/admin/actions/orders";
 import { updateSettingsAction } from "@/server/admin/actions/settings";
 import { buildProductImagePath } from "@/server/admin/storage";
 
@@ -155,6 +155,7 @@ describe("admin order actions", () => {
     const repository: OrdersRepository = {
       getOrderStatus: vi.fn(async () => ({ paymentStatus: "paid" as const, fulfillmentStatus: "processing" as const })),
       updateFulfillmentStatus: vi.fn(async (orderId, status) => ({ orderId, fulfillmentStatus: status })),
+      archiveOrder: vi.fn(),
     };
 
     await expect(updateOrderFulfillmentStatusAction({ orderId: "order-1", status: "shipped" }, { repository, assertAdmin: allowAdmin }))
@@ -166,6 +167,7 @@ describe("admin order actions", () => {
     const repository: OrdersRepository = {
       getOrderStatus: vi.fn(async () => ({ paymentStatus: "pending" as const, fulfillmentStatus: "pending" as const })),
       updateFulfillmentStatus: vi.fn(),
+      archiveOrder: vi.fn(),
     };
 
     await expect(updateOrderFulfillmentStatusAction({ orderId: "order-1", status: "delivered" }, { repository, assertAdmin: allowAdmin })).rejects.toThrow("Estado de orden inválido");
@@ -177,6 +179,7 @@ describe("admin order actions", () => {
     const repository: OrdersRepository = {
       getOrderStatus: vi.fn(),
       updateFulfillmentStatus: vi.fn(),
+      archiveOrder: vi.fn(),
     };
     const assertAdmin = vi.fn(async () => {
       throw new Error("No autorizado");
@@ -187,6 +190,36 @@ describe("admin order actions", () => {
     expect(assertAdmin).toHaveBeenCalledOnce();
     expect(repository.getOrderStatus).not.toHaveBeenCalled();
     expect(repository.updateFulfillmentStatus).not.toHaveBeenCalled();
+  });
+
+
+  it("archives orders by setting archived_at instead of deleting order history", async () => {
+    const repository: OrdersRepository = {
+      getOrderStatus: vi.fn(),
+      updateFulfillmentStatus: vi.fn(),
+      archiveOrder: vi.fn(async (orderId) => ({ id: orderId, archived_at: "2026-06-14T12:00:00.000Z" })),
+    };
+
+    await expect(archiveOrderAction("550e8400-e29b-41d4-a716-446655440030", { repository, assertAdmin: allowAdmin }))
+      .resolves.toEqual({ id: "550e8400-e29b-41d4-a716-446655440030", archived_at: "2026-06-14T12:00:00.000Z" });
+
+    expect(repository.archiveOrder).toHaveBeenCalledWith("550e8400-e29b-41d4-a716-446655440030");
+  });
+
+  it("rejects invalid or non-admin order archives before repository mutation", async () => {
+    const repository: OrdersRepository = {
+      getOrderStatus: vi.fn(),
+      updateFulfillmentStatus: vi.fn(),
+      archiveOrder: vi.fn(),
+    };
+    const assertAdmin = vi.fn(async () => {
+      throw new Error("No autorizado");
+    });
+
+    await expect(archiveOrderAction("bad/id", { repository, assertAdmin: allowAdmin })).rejects.toThrow("ID de orden inválido");
+    await expect(archiveOrderAction("550e8400-e29b-41d4-a716-446655440030", { repository, assertAdmin })).rejects.toThrow("No autorizado");
+
+    expect(repository.archiveOrder).not.toHaveBeenCalled();
   });
 });
 

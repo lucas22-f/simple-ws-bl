@@ -4,6 +4,8 @@ import { assertFulfillmentTransition, type OrderFulfillmentStatus, type OrderPay
 import { assertAdminActionAccess, type AdminActionAuthOptions } from "@/server/admin/actions/auth";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
 
+const orderIdSchema = z.string().uuid();
+
 const updateOrderStatusSchema = z.object({
   orderId: z.string().min(1),
   status: z.string().min(1),
@@ -17,6 +19,7 @@ export type OrderStatusSnapshot = {
 export type OrdersRepository = {
   getOrderStatus(orderId: string): Promise<OrderStatusSnapshot>;
   updateFulfillmentStatus(orderId: string, status: OrderFulfillmentStatus): Promise<unknown>;
+  archiveOrder(orderId: string): Promise<unknown>;
 };
 
 type OrderActionOptions = AdminActionAuthOptions & {
@@ -34,6 +37,11 @@ export function createSupabaseOrdersRepository(): OrdersRepository {
     async updateFulfillmentStatus(orderId, status) {
       const { data, error } = await supabase.from("orders").update({ fulfillment_status: status }).eq("id", orderId).select("*").single();
       if (error) throw new Error("No pudimos actualizar la orden");
+      return data;
+    },
+    async archiveOrder(orderId) {
+      const { data, error } = await supabase.from("orders").update({ archived_at: new Date().toISOString() }).eq("id", orderId).select("*").single();
+      if (error) throw new Error("No pudimos archivar la orden");
       return data;
     },
   };
@@ -54,4 +62,17 @@ export async function updateOrderFulfillmentStatusAction(rawInput: unknown, opti
   const current = await repository.getOrderStatus(parsed.data.orderId);
   const next = assertFulfillmentTransition(current.fulfillmentStatus, parsed.data.status);
   return repository.updateFulfillmentStatus(parsed.data.orderId, next);
+}
+
+
+function parseOrderId(orderId: string) {
+  const parsed = orderIdSchema.safeParse(orderId);
+  if (!parsed.success) throw new Error("ID de orden inválido");
+  return parsed.data;
+}
+
+export async function archiveOrderAction(orderId: string, options: OrderActionOptions = {}) {
+  await assertAdminActionAccess(options);
+  const repository = options.repository ?? createSupabaseOrdersRepository();
+  return repository.archiveOrder(parseOrderId(orderId));
 }
