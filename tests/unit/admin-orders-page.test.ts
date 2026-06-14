@@ -20,6 +20,7 @@ const orders = [
     paymentStatus: "paid" as const,
     fulfillmentStatus: "processing" as const,
     createdAt: "2026-06-01T10:30:00.000Z",
+    archivedAt: null,
     items: [{ productName: "Mate camionero", quantity: 2 }],
   },
 ];
@@ -73,11 +74,21 @@ describe("admin order queries", () => {
       payment_status: "paid" as const,
       fulfillment_status: "processing" as const,
       created_at: "2026-06-01T10:30:00.000Z",
+      archived_at: "2026-06-14T12:00:00.000Z",
       order_items: [{ product_name: "Mate camionero", quantity: 2 }],
     };
     const client = { listAdminOrders: vi.fn(async () => ({ data: [row], error: null })) };
 
-    await expect(listAdminOrders({ client })).resolves.toEqual([mapAdminOrderRow(row)]);
+    await expect(listAdminOrders({ client })).resolves.toEqual([expect.objectContaining({ ...mapAdminOrderRow(row), archivedAt: "2026-06-14T12:00:00.000Z" })]);
+    expect(client.listAdminOrders).toHaveBeenCalledWith(expect.objectContaining({ includeArchived: false }));
+  });
+
+  it("allows explicit archived order queries for audit views", async () => {
+    const client = { listAdminOrders: vi.fn(async () => ({ data: [], error: null, count: 0 })) };
+
+    await expect(listAdminOrders({ client, includeArchived: true })).resolves.toEqual([]);
+
+    expect(client.listAdminOrders).toHaveBeenCalledWith(expect.objectContaining({ includeArchived: true }));
   });
 
   it("fails explicitly when Supabase cannot load orders", async () => {
