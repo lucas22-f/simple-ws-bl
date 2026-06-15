@@ -31,11 +31,17 @@ export type AdminOrder = {
 
 export type AdminOrderListOptions = PaginationInput & {
   includeArchived?: boolean;
+  search?: string;
 };
 
 export type AdminOrderQueryClient = {
   listAdminOrders: (options?: AdminOrderListOptions) => Promise<{ data: AdminOrderRow[] | null; error: unknown; count?: number | null }>;
 };
+
+function normalizeSearch(value?: string) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
 
 export function mapAdminOrderRow(row: AdminOrderRow): AdminOrder {
   return {
@@ -72,6 +78,12 @@ export function createSupabaseAdminOrderQueryClient(): AdminOrderQueryClient {
         query = query.is("archived_at", null);
       }
 
+      const search = normalizeSearch(options.search);
+      if (search) {
+        const escapedSearch = search.replaceAll("%", "\\%").replaceAll("_", "\\_");
+        query = query.or(`id.ilike.%${escapedSearch}%,buyer_name.ilike.%${escapedSearch}%`);
+      }
+
       if (options.pageSize) {
         const { from, to } = getPaginationRange({ page: options.page ?? 1, pageSize: options.pageSize });
         query = query.range(from, to);
@@ -90,7 +102,12 @@ export async function listAdminOrders(options: { client?: AdminOrderQueryClient 
 
 export async function listAdminOrdersPage(options: { client?: AdminOrderQueryClient } & AdminOrderListOptions = {}) {
   const client = options.client ?? createSupabaseAdminOrderQueryClient();
-  const { data, error, count } = await client.listAdminOrders({ page: options.page, pageSize: options.pageSize, includeArchived: options.includeArchived ?? false });
+  const { data, error, count } = await client.listAdminOrders({
+    page: options.page,
+    pageSize: options.pageSize,
+    includeArchived: options.includeArchived ?? false,
+    search: options.search,
+  });
 
   if (error) {
     throw new Error("No pudimos cargar las órdenes.");

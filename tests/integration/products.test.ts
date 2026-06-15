@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it, vi } from "vitest";
 import {
   listAdminProducts,
   getActiveProductBySlug,
@@ -173,6 +173,16 @@ describe("admin product queries", () => {
         images: [],
       },
     ]);
+  });
+
+  it("threads admin product search to the query client with pagination", async () => {
+    const client: AdminProductQueryClient = {
+      listAdminProducts: vi.fn(async () => ({ data: [], error: null, count: 0 })),
+    };
+
+    await listAdminProducts({ client, search: "mate", page: 2, pageSize: 5 });
+
+    expect(client.listAdminProducts).toHaveBeenCalledWith({ page: 2, pageSize: 5, search: "mate" });
   });
 });
 
