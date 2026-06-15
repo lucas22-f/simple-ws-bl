@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { useActionState } from "react";
-import { Archive, Boxes, CircleDollarSign, Eye, ImageOff, ImagePlus, PackageCheck, PackagePlus, PencilLine, Sparkles, X } from "lucide-react";
+import { Archive, Boxes, CircleDollarSign, Eye, ImageOff, ImagePlus, PackageCheck, PackagePlus, PencilLine, Sparkles, Trash2, X } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { Button } from "@/components/ui/button";
 import { FieldMessage, FormToast } from "@/components/ui/form-feedback";
 import { FormLoadingOverlay } from "@/components/ui/loading-overlay";
+import { NavigationLink } from "@/components/ui/navigation-link";
 import { PaginationControls } from "@/components/ui/pagination";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { initialFormActionState, type FormActionState } from "@/lib/form-state";
@@ -24,6 +25,7 @@ type AdminProductsViewProps = {
     create: ProductFormAction;
     update: ProductFormAction;
     archive: ProductFormAction;
+    delete: ProductFormAction;
   };
 };
 
@@ -208,7 +210,7 @@ function ProductFields({ product }: { product?: AdminProduct }) {
   );
 }
 
-function ProductCreateForm({ action }: { action: ProductFormAction }) {
+export function ProductCreateForm({ action }: { action: ProductFormAction }) {
   const { state, formAction } = useProductFormAction(action);
   const [imageStatus, setImageStatus] = React.useState<{ message: string; tone?: "neutral" | "error" | "success" }>();
   const createAction = typeof formAction === "function"
@@ -276,6 +278,29 @@ function ProductArchiveForm({ productId, action }: { productId: string; action: 
   );
 }
 
+function ProductDeleteForm({ product, action }: { product: AdminProduct; action: ProductFormAction }) {
+  const { state, formAction } = useProductFormAction(action);
+  return (
+    <form action={formAction} className="relative mt-3 overflow-hidden rounded-xl border border-destructive/20 bg-destructive/5 p-3">
+      <FormToast state={state} successTitle="Producto eliminado" />
+      <FormLoadingOverlay title="Eliminando producto" description="Validamos que no tenga órdenes pendientes ni reservas activas." />
+      <input name="productId" type="hidden" value={product.id} />
+      <label className="flex items-start gap-2 text-xs text-muted-foreground">
+        <input className="mt-0.5 h-4 w-4 accent-primary" name="confirmDelete" type="checkbox" value="true" required />
+        Confirmo que quiero eliminar “{product.name}”. Se bloqueará automáticamente si tiene órdenes pendientes o reservas activas.
+      </label>
+      <SubmitButton
+        variant="outline"
+        className="button-lift mt-3 w-full border-destructive/40 text-destructive hover:bg-destructive/10"
+        pendingLabel="Eliminando producto..."
+      >
+        <Trash2 className="h-4 w-4" aria-hidden="true" />
+        Eliminar producto
+      </SubmitButton>
+    </form>
+  );
+}
+
 function ProductEditDialog({ product, actions }: { product: AdminProduct; actions: AdminProductsViewProps["actions"] }) {
   const dialogRef = React.useRef<HTMLDialogElement>(null);
 
@@ -302,6 +327,7 @@ function ProductEditDialog({ product, actions }: { product: AdminProduct; action
         <div className="p-5 sm:p-6">
           <ProductUpdateForm product={product} action={actions.update} />
           <ProductArchiveForm productId={product.id} action={actions.archive} />
+          <ProductDeleteForm product={product} action={actions.delete} />
         </div>
       </dialog>
     </>
@@ -334,29 +360,27 @@ export function AdminProductsView({ products, pagination, actions }: AdminProduc
         ))}
       </section>
 
-      <section className="rounded-xl border bg-card p-5 shadow-[0_2px_8px_rgb(37_26_18/0.06)] sm:p-6">
-        <div className="flex items-start gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted text-primary">
-            <PackagePlus className="h-5 w-5" aria-hidden="true" />
-          </span>
-          <div>
-            <h2 className="text-xl font-semibold">Crear producto</h2>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">Cargá la información esencial. Después podés editarla desde el listado.</p>
-          </div>
-        </div>
-        <ProductCreateForm action={actions.create} />
-      </section>
-
       <section className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-xl font-semibold">Inventario actual</h2>
-          <p className="text-sm text-muted-foreground">Revisá el catálogo de un vistazo y desplegá la edición solamente cuando la necesites.</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold">Inventario actual</h2>
+            <p className="text-sm text-muted-foreground">Revisá el catálogo de un vistazo y desplegá la edición solamente cuando la necesites.</p>
+          </div>
+          <NavigationLink
+            href="/admin/products/new"
+            className="button-lift inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            pendingTitle="Cargando creación de producto"
+            pendingDescription="Abrimos el formulario dedicado para cargar un nuevo producto."
+          >
+            <PackagePlus className="h-4 w-4" aria-hidden="true" />
+            Agregar producto
+          </NavigationLink>
         </div>
 
         {products.length === 0 ? (
           <div className="rounded-xl border border-dashed bg-card p-6 text-muted-foreground">
             <p className="font-semibold text-foreground">Todavía no hay productos cargados.</p>
-            <p>Creá el primero con el formulario de arriba.</p>
+            <p>Creá el primero desde la ruta dedicada de alta de productos.</p>
           </div>
         ) : (
           <div className="space-y-6">
