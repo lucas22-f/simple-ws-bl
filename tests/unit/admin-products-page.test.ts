@@ -65,6 +65,18 @@ describe("AdminProductsView", () => {
     expect(html).toContain("Sin imagen disponible");
   });
 
+
+
+  it("renders compact product cards with accessible management controls", () => {
+    const html = renderToStaticMarkup(createElement(AdminProductsView, { products, actions }));
+
+    expect(html).toContain('aria-label="Producto Mate camionero"');
+    expect(html).toContain('aria-label="Editar Mate camionero"');
+    expect(html).toContain('aria-label="Archivar Mate camionero"');
+    expect(html).toContain('aria-label="Eliminar Mate camionero"');
+    expect(html).toContain('Confirmo que quiero eliminar');
+  });
+
   it("keeps the products overview focused on management without the create form", () => {
     const html = renderToStaticMarkup(createElement(AdminProductsView, { products, actions }));
 
