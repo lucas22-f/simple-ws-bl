@@ -3,7 +3,9 @@
 import * as React from "react";
 import { Home, LogOut, PackageSearch, ReceiptText, Settings, Store } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { FormLoadingOverlay } from "@/components/ui/loading-overlay";
 import { NavigationLink } from "@/components/ui/navigation-link";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/server/admin/actions/logout";
 
@@ -57,14 +59,15 @@ export function AdminShell({ title, description, eyebrow = "Admin", children }: 
               Ver tienda
             </NavigationLink>
             <form action={logoutAction}>
-              <button
-                type="submit"
+              <FormLoadingOverlay title="Cerrando sesión" description="Salimos del panel y volvemos al acceso de administración." />
+              <SubmitButton
                 aria-label="Cerrar sesión de administración"
-                className="button-lift inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-destructive/30 bg-card px-4 text-sm font-semibold text-destructive transition hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
+                className="cursor-pointer button-lift inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-destructive/30 bg-card px-4 text-sm font-semibold text-destructive transition hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto"
+                pendingLabel="Cerrando sesión..."
               >
                 <LogOut className="h-4 w-4" aria-hidden="true" />
                 Cerrar sesión
-              </button>
+              </SubmitButton>
             </form>
           </div>
         </div>

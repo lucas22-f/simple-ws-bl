@@ -77,6 +77,13 @@ describe("AdminProductsView", () => {
     expect(html).toContain('Confirmo que quiero eliminar');
   });
 
+  it("uses a two-column product grid from the mobile layout", () => {
+    const html = renderToStaticMarkup(createElement(AdminProductsView, { products, actions }));
+
+    expect(html).toContain("grid grid-cols-2 gap-3");
+    expect(html).toContain("aspect-square");
+  });
+
   it("keeps the products overview focused on management without the create form", () => {
     const html = renderToStaticMarkup(createElement(AdminProductsView, { products, actions }));
 

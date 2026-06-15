@@ -307,7 +307,7 @@ function ProductEditDialog({ product, actions }: { product: AdminProduct; action
 
   return (
     <>
-      <Button className="w-full" type="button" variant="outline" aria-label={`Editar ${product.name}`} onClick={() => dialogRef.current?.showModal()}>
+      <Button className="w-full px-2 text-xs sm:px-4 sm:text-sm" type="button" variant="outline" aria-label={`Editar ${product.name}`} onClick={() => dialogRef.current?.showModal()}>
         <PencilLine className="h-4 w-4" aria-hidden="true" />
         Editar producto
       </Button>
@@ -385,13 +385,13 @@ export function AdminProductsView({ products, pagination, actions }: AdminProduc
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               {products.map((product) => {
                 const productImage = product.images[0];
 
                 return (
                 <article key={product.id} aria-label={`Producto ${product.name}`} className="group animate-in-up overflow-hidden rounded-xl border border-border bg-card shadow-[0_2px_8px_rgb(37_26_18/0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]">
-                  <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                  <div className="relative aspect-square overflow-hidden bg-muted sm:aspect-[4/3]">
                     {productImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img className="h-full w-full object-cover transition duration-500 group-hover:scale-105" src={productImage.storagePath} alt={productImage.altText || product.name} />
@@ -408,13 +408,13 @@ export function AdminProductsView({ products, pagination, actions }: AdminProduc
                     </div>
                   </div>
 
-                  <div className="p-4 sm:p-5">
-                    <div className="grid gap-4">
+                  <div className="p-3 sm:p-5">
+                    <div className="grid gap-3 sm:gap-4">
                     <div className="min-w-0">
-                      <h3 className="text-lg font-semibold">{product.name}</h3>
+                      <h3 className="line-clamp-2 text-sm font-semibold leading-tight sm:text-lg">{product.name}</h3>
                       <p className="truncate text-sm text-muted-foreground">/{product.slug}</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-sm md:text-right">
+                    <div className="grid gap-1 text-xs sm:grid-cols-2 sm:gap-x-6 sm:text-sm md:text-right">
                       <span className="text-muted-foreground">Precio</span>
                       <strong>{formatCentsAsCurrency(product.priceCents, product.currency)}</strong>
                       <span className="text-muted-foreground">Stock</span>

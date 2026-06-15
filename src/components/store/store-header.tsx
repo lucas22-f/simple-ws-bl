@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import * as React from "react";
 import { CartDrawer } from "@/components/cart";
+import { NavigationLink } from "@/components/ui/navigation-link";
 
 const navigationItems = [
   { href: "/catalog", label: "Catálogo" },
@@ -53,13 +54,15 @@ export function StoreHeader() {
         <div className="flex items-center gap-2">
           <div className="hidden items-center gap-1 sm:flex">
             {navigationItems.map((item) => (
-              <Link
+              <NavigationLink
                 key={item.href}
                 className="rounded-lg px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 href={item.href}
+                pendingTitle={item.label === "Admin" ? "Cargando admin" : "Cargando catálogo"}
+                pendingDescription={item.label === "Admin" ? "Verificamos el acceso y abrimos el panel." : "Abrimos el catálogo de productos."}
               >
                 {item.label}
-              </Link>
+              </NavigationLink>
             ))}
           </div>
           <CartDrawer />
@@ -87,15 +90,17 @@ export function StoreHeader() {
         <div className="min-h-0">
           <div className="mx-auto grid max-w-7xl gap-2 px-4 py-3">
             {navigationItems.map((item) => (
-              <Link
+              <NavigationLink
                 key={item.href}
                 className="rounded-xl border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 href={item.href}
                 onClick={closeMenu}
+                pendingTitle={item.label === "Admin" ? "Cargando admin" : "Cargando catálogo"}
+                pendingDescription={item.label === "Admin" ? "Verificamos el acceso y abrimos el panel." : "Abrimos el catálogo de productos."}
                 tabIndex={open ? undefined : -1}
               >
                 {item.label}
-              </Link>
+              </NavigationLink>
             ))}
           </div>
         </div>
