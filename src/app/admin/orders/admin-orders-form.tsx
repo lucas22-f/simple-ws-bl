@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useActionState } from "react";
-import { Banknote, ClipboardCheck, Clock3, PackageCheck, PackageSearch, ShoppingBag } from "lucide-react";
+import { Archive, Banknote, ClipboardCheck, Clock3, PackageCheck, PackageSearch, ShoppingBag } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { FieldMessage, FormToast } from "@/components/ui/form-feedback";
 import { FormLoadingOverlay } from "@/components/ui/loading-overlay";
@@ -15,6 +15,7 @@ import type { AdminOrder } from "@/server/orders/queries";
 
 type AdminOrdersFormProps = {
   action: (state: FormActionState, formData: FormData) => Promise<FormActionState>;
+  archiveAction: (state: FormActionState, formData: FormData) => Promise<FormActionState>;
   orders: AdminOrder[];
   pagination?: PaginationState;
 };
@@ -92,7 +93,27 @@ function OrderUpdateForm({ action, order }: { action: AdminOrdersFormProps["acti
   );
 }
 
-export function AdminOrdersForm({ action, orders, pagination }: AdminOrdersFormProps) {
+function OrderArchiveForm({ action, order }: { action: AdminOrdersFormProps["archiveAction"]; order: AdminOrder }) {
+  const [state, formAction] = useActionState(action, initialFormActionState);
+
+  return (
+    <form action={formAction} className="relative grid gap-3 overflow-hidden rounded-xl border border-border bg-muted/35 p-3">
+      <FormToast state={state} successTitle="Orden archivada" />
+      <FormLoadingOverlay title="Archivando orden" description="La ocultamos del listado operativo sin borrar su historial." />
+      <input name="orderId" type="hidden" value={order.id} />
+      <label className="flex items-start gap-2 text-xs text-muted-foreground">
+        <input className="mt-0.5 h-4 w-4 accent-primary" name="confirmArchive" type="checkbox" value="true" required />
+        Conservar historial y archivar la orden de {order.buyerName}. No se eliminarán sus productos ni comprobantes.
+      </label>
+      <SubmitButton variant="outline" className="button-lift min-h-11 border-border bg-card text-foreground hover:bg-muted" pendingLabel="Archivando orden...">
+        <Archive className="h-4 w-4" aria-hidden="true" />
+        Archivar orden
+      </SubmitButton>
+    </form>
+  );
+}
+
+export function AdminOrdersForm({ action, archiveAction, orders, pagination }: AdminOrdersFormProps) {
   const pendingOrders = orders.filter((order) => order.fulfillmentStatus === "pending").length;
   const processingOrders = orders.filter((order) => order.fulfillmentStatus === "processing").length;
   const paidOrders = orders.filter((order) => order.paymentStatus === "paid").length;
@@ -132,9 +153,9 @@ export function AdminOrdersForm({ action, orders, pagination }: AdminOrdersFormP
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2">
               {orders.map((order) => (
-              <article key={order.id} className="animate-in-up rounded-xl border bg-card p-4 shadow-[0_2px_8px_rgb(37_26_18/0.06)] sm:p-5">
+              <article key={order.id} aria-label={`Orden ${order.buyerName}`} className="animate-in-up rounded-xl border border-border bg-card p-4 shadow-[0_2px_8px_rgb(37_26_18/0.06)] sm:p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Pedido {order.id.slice(0, 8)}</p>
@@ -158,8 +179,9 @@ export function AdminOrdersForm({ action, orders, pagination }: AdminOrdersFormP
                   <p className="text-lg font-bold text-foreground">{formatPrice(order.totalCents, order.currency)}</p>
                 </div>
 
-                <div className="mt-4">
+                <div className="mt-4 grid gap-3">
                   <OrderUpdateForm action={action} order={order} />
+                  <OrderArchiveForm action={archiveAction} order={order} />
                 </div>
               </article>
               ))}

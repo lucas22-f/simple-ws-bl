@@ -60,12 +60,22 @@ test.describe("admin", () => {
 
     await page.goto("/admin/products");
     await expect(page.getByRole("heading", { name: "Productos" })).toBeVisible();
-    await expect(page.getByPlaceholder("Nombre")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Agregar producto" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Guardar producto" })).toHaveCount(0);
+
+    await page.goto("/admin/products/new");
+    await expect(page.getByRole("heading", { name: "Crear producto" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Guardar producto" })).toBeVisible();
 
     await page.goto("/admin/orders");
     await expect(page.getByRole("heading", { name: /rdenes/ })).toBeVisible();
-    await expect(page.getByPlaceholder("ID de orden")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Actualizar" })).toBeVisible();
+    const orderCards = page.locator('article[aria-label^="Orden "]');
+    expect(await orderCards.count()).toBeLessThanOrEqual(4);
+    const firstOrder = orderCards.first();
+    if (await firstOrder.count()) {
+      await expect(firstOrder.getByRole("button", { name: "Actualizar" })).toBeVisible();
+      await expect(firstOrder.getByRole("button", { name: "Archivar orden" })).toBeVisible();
+      await expect(firstOrder.getByRole("checkbox", { name: /Conservar historial/ })).toBeVisible();
+    }
   });
 });

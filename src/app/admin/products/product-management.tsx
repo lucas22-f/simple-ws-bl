@@ -263,14 +263,14 @@ function ProductUpdateForm({ product, action }: { product: AdminProduct; action:
   );
 }
 
-function ProductArchiveForm({ productId, action }: { productId: string; action: ProductFormAction }) {
+function ProductArchiveForm({ product, action }: { product: AdminProduct; action: ProductFormAction }) {
   const { state, formAction } = useProductFormAction(action);
   return (
     <form action={formAction} className="relative mt-3 overflow-hidden rounded-xl">
       <FormToast state={state} successTitle="Producto archivado" />
       <FormLoadingOverlay title="Archivando producto" description="Lo quitamos del catálogo público." />
-      <input name="productId" type="hidden" value={productId} />
-      <SubmitButton variant="outline" className="button-lift" pendingLabel="Archivando producto...">
+      <input name="productId" type="hidden" value={product.id} />
+      <SubmitButton variant="outline" className="button-lift" pendingLabel="Archivando producto..." aria-label={`Archivar ${product.name}`}>
         <Archive className="h-4 w-4" aria-hidden="true" />
         Archivar producto
       </SubmitButton>
@@ -291,6 +291,7 @@ function ProductDeleteForm({ product, action }: { product: AdminProduct; action:
       </label>
       <SubmitButton
         variant="outline"
+        aria-label={`Eliminar ${product.name}`}
         className="button-lift mt-3 w-full border-destructive/40 text-destructive hover:bg-destructive/10"
         pendingLabel="Eliminando producto..."
       >
@@ -306,7 +307,7 @@ function ProductEditDialog({ product, actions }: { product: AdminProduct; action
 
   return (
     <>
-      <Button className="w-full" type="button" variant="outline" onClick={() => dialogRef.current?.showModal()}>
+      <Button className="w-full" type="button" variant="outline" aria-label={`Editar ${product.name}`} onClick={() => dialogRef.current?.showModal()}>
         <PencilLine className="h-4 w-4" aria-hidden="true" />
         Editar producto
       </Button>
@@ -326,7 +327,7 @@ function ProductEditDialog({ product, actions }: { product: AdminProduct; action
         </div>
         <div className="p-5 sm:p-6">
           <ProductUpdateForm product={product} action={actions.update} />
-          <ProductArchiveForm productId={product.id} action={actions.archive} />
+          <ProductArchiveForm product={product} action={actions.archive} />
           <ProductDeleteForm product={product} action={actions.delete} />
         </div>
       </dialog>
@@ -384,12 +385,12 @@ export function AdminProductsView({ products, pagination, actions }: AdminProduc
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
               {products.map((product) => {
                 const productImage = product.images[0];
 
                 return (
-                <article key={product.id} className="group animate-in-up overflow-hidden rounded-xl border bg-card shadow-[0_2px_8px_rgb(37_26_18/0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]">
+                <article key={product.id} aria-label={`Producto ${product.name}`} className="group animate-in-up overflow-hidden rounded-xl border border-border bg-card shadow-[0_2px_8px_rgb(37_26_18/0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]">
                   <div className="relative aspect-[4/3] overflow-hidden bg-muted">
                     {productImage ? (
                       // eslint-disable-next-line @next/next/no-img-element

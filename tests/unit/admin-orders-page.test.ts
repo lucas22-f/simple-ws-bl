@@ -8,6 +8,7 @@ import { AdminOrdersForm } from "@/app/admin/orders/admin-orders-form";
 import { listAdminOrders, mapAdminOrderRow } from "@/server/orders/queries";
 
 const action = async () => ({ status: "idle" as const, message: "" });
+const archiveAction = async () => ({ status: "idle" as const, message: "" });
 
 const orders = [
   {
@@ -27,7 +28,7 @@ const orders = [
 
 describe("AdminOrdersForm", () => {
   it("renders real orders with buyer, items, payment state and server-backed update form", () => {
-    const html = renderToStaticMarkup(createElement(AdminOrdersForm, { orders, action }));
+    const html = renderToStaticMarkup(createElement(AdminOrdersForm, { orders, action, archiveAction }));
 
     expect(html).toContain("Pedidos recientes");
     expect(html).toContain("Ada Lovelace");
@@ -40,10 +41,39 @@ describe("AdminOrdersForm", () => {
   });
 
   it("renders an empty operational state when there are no orders", () => {
-    const html = renderToStaticMarkup(createElement(AdminOrdersForm, { orders: [], action }));
+    const html = renderToStaticMarkup(createElement(AdminOrdersForm, { orders: [], action, archiveAction }));
 
     expect(html).toContain("Todavía no hay órdenes para gestionar");
     expect(html).toContain("va a aparecer acá automáticamente");
+  });
+
+
+
+  it("renders compact order cards with confirmed archive controls", () => {
+    const html = renderToStaticMarkup(createElement(AdminOrdersForm, { orders, action, archiveAction }));
+
+    expect(html).toContain('aria-label="Orden Ada Lovelace"');
+    expect(html).toContain('Archivar orden');
+    expect(html).toContain('name="confirmArchive"');
+    expect(html).toContain('Conservar historial');
+  });
+
+  it("requests four visible orders per admin page", async () => {
+    vi.resetModules();
+    const listAdminOrdersPageMock = vi.fn(async () => ({
+      orders: [],
+      pagination: { page: 2, pageSize: 4, totalItems: 9, totalPages: 3 },
+    }));
+    vi.doMock("@/server/orders/queries", () => ({ listAdminOrdersPage: listAdminOrdersPageMock }));
+    vi.doMock("@/server/admin/actions/orders", () => ({
+      updateOrderFulfillmentStatusAction: vi.fn(),
+      archiveOrderAction: vi.fn(),
+    }));
+    const { default: AdminOrdersPage } = await import("@/app/admin/orders/page");
+
+    await AdminOrdersPage({ searchParams: Promise.resolve({ page: "2" }) });
+
+    expect(listAdminOrdersPageMock).toHaveBeenCalledWith({ page: 2, pageSize: 4 });
   });
 
   it("renders pagination controls for long order lists", () => {
@@ -51,6 +81,7 @@ describe("AdminOrdersForm", () => {
       createElement(AdminOrdersForm, {
         orders,
         action,
+        archiveAction,
         pagination: { page: 1, pageSize: 1, totalItems: 11, totalPages: 11 },
       }),
     );
