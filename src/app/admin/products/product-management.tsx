@@ -29,7 +29,8 @@ type AdminProductsViewProps = {
   };
 };
 
-const fieldClassName = "min-h-11 rounded-xl border bg-card px-3 py-2 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring";
+const fieldClassName = "min-h-10 rounded-xl border bg-card px-3 py-1.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring";
+const compactFieldClassName = `${fieldClassName} max-w-[10rem] lg:max-w-xs`;
 
 function useProductFormAction(action: ProductFormAction) {
   const isEnhancedAction = typeof action === "function";
@@ -53,7 +54,7 @@ function ProductImageField({ status, tone }: { status?: string; tone?: "neutral"
   const [selectedFileName, setSelectedFileName] = React.useState("Sin archivo seleccionado");
 
   return (
-    <label className="grid gap-2 rounded-2xl border border-dashed bg-muted/35 p-4 text-sm font-medium sm:col-span-2">
+    <label className="grid gap-2 rounded-2xl border border-dashed bg-muted/35 p-3 text-sm font-medium col-span-2 lg:col-span-3">
       <span className="inline-flex items-center gap-2">
         <ImagePlus className="h-4 w-4 text-primary" aria-hidden="true" />
         Imagen del producto
@@ -74,7 +75,7 @@ function ProductImageField({ status, tone }: { status?: string; tone?: "neutral"
       <input name="productImageAlt" type="hidden" value="" />
       <FieldMessage
         id="product-image-help"
-        message={status ?? "La imagen se optimiza automáticamente a WebP, máximo 1200px, antes de subirla al bucket."}
+        message={status ?? "Se optimiza a WebP, máx. 1200px."}
         tone={tone}
       />
     </label>
@@ -114,33 +115,30 @@ function ProductPricePreview({ basePriceAmount, applySurcharge, currency }: { ba
   const surchargeCents = Math.max(0, publishedPriceCents - basePriceCents);
 
   return (
-    <div className="grid gap-3 rounded-2xl border border-border bg-muted/35 p-4 text-sm sm:col-span-2" aria-live="polite">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="font-semibold text-foreground">Vista previa del precio publicado</p>
-          <p className="mt-1 text-muted-foreground">El precio base se guarda en centavos internamente; el catálogo y Mercado Pago usan el precio publicado.</p>
-        </div>
+    <div className="grid gap-2 rounded-2xl border border-border bg-muted/35 p-3 text-sm col-span-2 lg:col-span-3" aria-live="polite">
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-semibold text-foreground">Vista previa del precio</p>
         <span className="rounded-full bg-card px-3 py-1 text-xs font-semibold text-primary">
           Recargo {MERCADO_PAGO_SURCHARGE_PERCENT}%
         </span>
       </div>
       {priceIsValid ? (
-        <dl className="grid gap-2 sm:grid-cols-3">
-          <div className="rounded-xl bg-card p-3">
+        <dl className="grid grid-cols-3 gap-1">
+          <div className="rounded-xl bg-card p-2">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Base</dt>
             <dd className="mt-1 font-semibold">{formatCentsAsCurrency(basePriceCents, currency)}</dd>
           </div>
-          <div className="rounded-xl bg-card p-3">
+          <div className="rounded-xl bg-card p-2">
             <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Recargo</dt>
             <dd className="mt-1 font-semibold">{formatCentsAsCurrency(surchargeCents, currency)}</dd>
           </div>
-          <div className="rounded-xl bg-primary p-3 text-primary-foreground">
+          <div className="rounded-xl bg-primary p-2 text-primary-foreground">
             <dt className="text-xs uppercase tracking-[0.14em] opacity-80">Publicado</dt>
             <dd className="mt-1 font-semibold">{formatCentsAsCurrency(publishedPriceCents, currency)}</dd>
           </div>
         </dl>
       ) : (
-        <p className="rounded-xl bg-card p-3 font-medium text-primary">Ingresá un precio válido para calcular la vista previa.</p>
+        <p className="rounded-xl bg-card p-2 text-sm font-medium text-primary">Ingresá un precio válido para ver la vista previa.</p>
       )}
     </div>
   );
@@ -155,18 +153,18 @@ function ProductFields({ product }: { product?: AdminProduct }) {
     <>
       <label className="grid gap-1 text-sm font-medium">
         Nombre
-        <input className={fieldClassName} name="name" placeholder="Mate cerámico" defaultValue={product?.name} required minLength={2} />
+        <input className={compactFieldClassName} name="name" placeholder="Mate cerámico" defaultValue={product?.name} required minLength={2} />
         <FieldMessage id="product-name-help" message="Mínimo 2 caracteres." />
       </label>
       <label className="grid gap-1 text-sm font-medium">
         Slug
-        <input className={fieldClassName} name="slug" placeholder="mate-ceramico" pattern="[a-z0-9]+(-[a-z0-9]+)*" defaultValue={product?.slug} required />
-        <FieldMessage id="product-slug-help" message="Solo minúsculas, números y guiones. Sin espacios." />
+        <input className={compactFieldClassName} name="slug" placeholder="mate-ceramico" pattern="[a-z0-9]+(-[a-z0-9]+)*" defaultValue={product?.slug} required />
+        <FieldMessage id="product-slug-help" message="mismo formato" />
       </label>
       <label className="grid gap-1 text-sm font-medium">
         Precio base
         <input
-          className={fieldClassName}
+          className={compactFieldClassName}
           name="basePriceAmount"
           placeholder="12500,00"
           inputMode="decimal"
@@ -174,24 +172,26 @@ function ProductFields({ product }: { product?: AdminProduct }) {
           onChange={(event) => setBasePriceAmount(event.currentTarget.value)}
           required
         />
-        <FieldMessage id="product-price-help" message="Ingresá el importe normal, sin convertirlo a centavos." />
+        <FieldMessage id="product-price-help" message="Importe sin centavos" />
       </label>
       <label className="grid gap-1 text-sm font-medium">
         Stock
-        <input className={fieldClassName} name="stockQuantity" placeholder="Stock" type="number" min="0" defaultValue={product?.stockQuantity ?? ""} />
-        <FieldMessage id="product-stock-help" message="Dejalo vacío si todavía no querés controlar stock." />
+        <input className={compactFieldClassName} name="stockQuantity" placeholder="Stock" type="number" min="0" defaultValue={product?.stockQuantity ?? ""} />
+        <FieldMessage id="product-stock-help" message="Vacío si no controlás stock" />
       </label>
-      <label className="grid gap-1 text-sm font-medium sm:col-span-2">
+      <label className="grid gap-1 text-sm font-medium col-span-2">
         Descripción
-        <textarea className={`${fieldClassName} min-h-24 resize-y`} name="description" placeholder="Descripción" defaultValue={product?.description} />
+        <textarea className={`${fieldClassName} min-h-16 resize-y`} name="description" placeholder="Descripción" defaultValue={product?.description} />
       </label>
-      <label className="flex items-center gap-2 text-sm">
-        <input name="active" type="checkbox" value="true" defaultChecked={product?.active ?? false} /> Publicado
-      </label>
-      <label className="flex items-center gap-2 text-sm">
-        <input name="featured" type="checkbox" value="true" defaultChecked={product?.featured ?? false} /> Destacado
-      </label>
-      <label className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 text-sm sm:col-span-2">
+      <div className="col-span-2 flex items-center gap-3">
+        <label className="flex items-center gap-2 text-sm">
+          <input name="active" type="checkbox" value="true" defaultChecked={product?.active ?? false} /> Publicado
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input name="featured" type="checkbox" value="true" defaultChecked={product?.featured ?? false} /> Destacado
+        </label>
+      </div>
+      <label className="flex items-start gap-3 rounded-2xl border border-border bg-card p-3 text-sm col-span-2">
         <input
           className="mt-1 h-4 w-4 accent-primary"
           name="applyMercadoPagoSurcharge"
@@ -215,32 +215,32 @@ export function ProductCreateForm({ action }: { action: ProductFormAction }) {
   const [imageStatus, setImageStatus] = React.useState<{ message: string; tone?: "neutral" | "error" | "success" }>();
   const createAction = typeof formAction === "function"
     ? async (formData: FormData) => {
-        const image = getFormDataFile(formData, "productImage");
+      const image = getFormDataFile(formData, "productImage");
 
-        if (image) {
-          setImageStatus({ message: `Optimizando ${formatFileSize(image.size)} antes de subir...` });
+      if (image) {
+        setImageStatus({ message: `Optimizando ${formatFileSize(image.size)} antes de subir...` });
 
-          try {
-            const compressedImage = await compressProductImage(image);
-            formData.set("productImage", compressedImage);
-            setImageStatus({ message: `Lista para subir: ${formatFileSize(compressedImage.size)} en WebP.`, tone: "success" });
-          } catch (error) {
-            setImageStatus({ message: getProductImageCompressionErrorMessage(error), tone: "error" });
-            return;
-          }
+        try {
+          const compressedImage = await compressProductImage(image);
+          formData.set("productImage", compressedImage);
+          setImageStatus({ message: `Lista para subir: ${formatFileSize(compressedImage.size)} en WebP.`, tone: "success" });
+        } catch (error) {
+          setImageStatus({ message: getProductImageCompressionErrorMessage(error), tone: "error" });
+          return;
         }
-
-        formAction(formData);
       }
+
+      formAction(formData);
+    }
     : formAction;
 
   return (
-    <form action={createAction} className="relative mt-5 grid gap-4 overflow-hidden sm:grid-cols-2">
+    <form action={createAction} className="relative mt-1 grid grid-cols-2 gap-x-4 gap-y-3 overflow-hidden lg:grid-cols-3">
       <FormToast state={state} successTitle="Producto guardado" />
       <FormLoadingOverlay title="Guardando producto" description="Optimizamos la imagen, creamos el producto y actualizamos el catálogo." />
       <ProductFields />
       <ProductImageField status={imageStatus?.message} tone={imageStatus?.tone} />
-      <SubmitButton className="button-lift min-h-11 sm:col-span-2" pendingLabel="Guardando producto...">
+      <SubmitButton className="button-lift min-h-11 sm:col-span-2 lg:col-span-3" pendingLabel="Guardando producto...">
         <PackagePlus className="h-4 w-4" aria-hidden="true" />
         Guardar producto
       </SubmitButton>
@@ -250,7 +250,7 @@ export function ProductCreateForm({ action }: { action: ProductFormAction }) {
 function ProductUpdateForm({ product, action }: { product: AdminProduct; action: ProductFormAction }) {
   const { state, formAction } = useProductFormAction(action);
   return (
-    <form action={formAction} className="relative mt-5 grid gap-4 overflow-hidden sm:grid-cols-2">
+    <form action={formAction} className="relative mt-5 grid gap-3 overflow-hidden sm:grid-cols-2">
       <FormToast state={state} successTitle="Producto actualizado" />
       <FormLoadingOverlay title="Actualizando producto" description="Guardamos los cambios de este producto." />
       <input name="productId" type="hidden" value={product.id} />
@@ -316,7 +316,7 @@ function ProductEditDialog({ product, actions }: { product: AdminProduct; action
         aria-labelledby={`edit-product-${product.id}`}
         className="m-auto max-h-[calc(100vh-2rem)] w-[min(46rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border bg-card p-0 text-foreground shadow-[0_18px_48px_rgb(37_26_18/0.24)] backdrop:bg-foreground/45"
       >
-        <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b bg-card px-5 py-4 sm:px-6">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b bg-card px-5 py-4 sm:px-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Edición de catálogo</p>
             <h2 id={`edit-product-${product.id}`} className="mt-1 text-xl font-semibold">{product.name}</h2>
@@ -361,7 +361,7 @@ export function AdminProductsView({ products, pagination, actions }: AdminProduc
         ))}
       </section>
 
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col gap-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-xl font-semibold">Inventario actual</h2>
@@ -385,53 +385,53 @@ export function AdminProductsView({ products, pagination, actions }: AdminProduc
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-3">
               {products.map((product) => {
                 const productImage = product.images[0];
 
                 return (
-                <article key={product.id} aria-label={`Producto ${product.name}`} className="group animate-in-up overflow-hidden rounded-xl border border-border bg-card shadow-[0_2px_8px_rgb(37_26_18/0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]">
-                  <div className="relative aspect-square overflow-hidden bg-muted sm:aspect-[4/3]">
-                    {productImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img className="h-full w-full object-cover transition duration-500 group-hover:scale-105" src={productImage.storagePath} alt={productImage.altText || product.name} />
-                    ) : (
-                      <div className="flex h-full items-center justify-center p-6 text-center text-sm font-medium text-muted-foreground">
-                        <div>
-                          <ImageOff className="mx-auto h-7 w-7 text-primary" aria-hidden="true" />
-                          <p className="mt-3">Sin imagen disponible</p>
+                  <article key={product.id} aria-label={`Producto ${product.name}`} className="group animate-in-up overflow-hidden rounded-xl border border-border bg-card shadow-[0_2px_8px_rgb(37_26_18/0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]">
+                    <div className="relative aspect-square overflow-hidden bg-muted sm:aspect-[4/3]">
+                      {productImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img className="h-full w-full object-cover transition duration-500 group-hover:scale-105" src={productImage.storagePath} alt={productImage.altText || product.name} />
+                      ) : (
+                        <div className="flex h-full items-center justify-center p-6 text-center text-sm font-medium text-muted-foreground">
+                          <div>
+                            <ImageOff className="mx-auto h-7 w-7 text-primary" aria-hidden="true" />
+                            <p className="mt-3">Sin imagen disponible</p>
+                          </div>
                         </div>
+                      )}
+                      <div className="absolute left-3 top-3">
+                        <ProductStatus active={product.active} featured={product.featured} />
                       </div>
-                    )}
-                    <div className="absolute left-3 top-3">
-                      <ProductStatus active={product.active} featured={product.featured} />
                     </div>
-                  </div>
 
-                  <div className="p-3 sm:p-5">
-                    <div className="grid gap-3 sm:gap-4">
-                    <div className="min-w-0">
-                      <h3 className="line-clamp-2 text-sm font-semibold leading-tight sm:text-lg">{product.name}</h3>
-                      <p className="truncate text-sm text-muted-foreground">/{product.slug}</p>
+                    <div className="p-3 sm:p-5">
+                      <div className="grid gap-3 sm:gap-3">
+                        <div className="min-w-0">
+                          <h3 className="line-clamp-2 text-sm font-semibold leading-tight sm:text-lg">{product.name}</h3>
+                          <p className="truncate text-sm text-muted-foreground">/{product.slug}</p>
+                        </div>
+                        <div className="grid gap-1 text-xs sm:grid-cols-2 sm:gap-x-6 sm:text-sm md:text-right">
+                          <span className="text-muted-foreground">Precio</span>
+                          <strong>{formatCentsAsCurrency(product.priceCents, product.currency)}</strong>
+                          <span className="text-muted-foreground">Stock</span>
+                          <strong>{product.stockQuantity ?? "Sin control"}</strong>
+                        </div>
+                        {productImage ? (
+                          <a className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-primary transition hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href={productImage.storagePath} target="_blank" rel="noreferrer">
+                            <Eye className="h-4 w-4" aria-hidden="true" />
+                            Ver imagen
+                          </a>
+                        ) : null}
+                      </div>
+                      <div className="mt-4 border-t pt-4">
+                        <ProductEditDialog product={product} actions={actions} />
+                      </div>
                     </div>
-                    <div className="grid gap-1 text-xs sm:grid-cols-2 sm:gap-x-6 sm:text-sm md:text-right">
-                      <span className="text-muted-foreground">Precio</span>
-                      <strong>{formatCentsAsCurrency(product.priceCents, product.currency)}</strong>
-                      <span className="text-muted-foreground">Stock</span>
-                      <strong>{product.stockQuantity ?? "Sin control"}</strong>
-                    </div>
-                    {productImage ? (
-                      <a className="inline-flex w-fit items-center gap-2 text-sm font-semibold text-primary transition hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" href={productImage.storagePath} target="_blank" rel="noreferrer">
-                        <Eye className="h-4 w-4" aria-hidden="true" />
-                        Ver imagen
-                      </a>
-                    ) : null}
-                  </div>
-                  <div className="mt-4 border-t pt-4">
-                    <ProductEditDialog product={product} actions={actions} />
-                  </div>
-                  </div>
-                </article>
+                  </article>
                 );
               })}
             </div>

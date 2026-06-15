@@ -14,6 +14,7 @@ type AdminShellProps = {
   description?: string;
   eyebrow?: string;
   children: React.ReactNode;
+  hideHeader?: boolean;
 };
 
 const adminNavItems = [
@@ -35,12 +36,12 @@ function isActivePath(pathname: string | null, href: string) {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-export function AdminShell({ title, description, eyebrow = "Admin", children }: AdminShellProps) {
+export function AdminShell({ title, description, hideHeader, eyebrow = "Admin", children }: AdminShellProps) {
   const pathname = usePathname();
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:gap-8 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
-      <header className="animate-in-up overflow-hidden rounded-3xl border border-border bg-card shadow-[0_18px_44px_rgb(37_26_18/0.08)]">
+      {!hideHeader && <header className="animate-in-up overflow-hidden rounded-3xl border border-border bg-card shadow-[0_18px_44px_rgb(37_26_18/0.08)]">
         <div className="flex flex-col gap-5 border-b border-border/70 bg-background/70 p-4 sm:p-6 lg:flex-row lg:items-start lg:justify-between lg:p-7">
           <div className="flex min-w-0 flex-col gap-2">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary">{eyebrow}</p>
@@ -97,7 +98,7 @@ export function AdminShell({ title, description, eyebrow = "Admin", children }: 
             );
           })}
         </nav>
-      </header>
+      </header>}
 
       {children}
     </main>
