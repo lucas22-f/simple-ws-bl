@@ -188,6 +188,7 @@ export function createSupabaseProductsRepository(): ProductsRepository {
         .from("order_items")
         .select("id, orders!inner(payment_status, inventory_status)")
         .eq("product_id", productId)
+        .is("orders.archived_at", null)
         .or("payment_status.eq.pending,inventory_status.in.(reserved,conflict)", { foreignTable: "orders" })
         .limit(1);
 

@@ -166,6 +166,25 @@ describe("admin product actions", () => {
     expect(repository.deleteProduct).toHaveBeenCalledWith("550e8400-e29b-41d4-a716-446655440000");
   });
 
+  it("checks only unarchived orders when validating unsafe product deletion references", async () => {
+    const limit = vi.fn(async () => ({ data: [], error: null }));
+    const or = vi.fn(() => ({ limit }));
+    const is = vi.fn(() => ({ or }));
+    const eq = vi.fn(() => ({ is }));
+    const select = vi.fn(() => ({ eq }));
+    const from = vi.fn(() => ({ select }));
+    supabaseAdmin.createSupabaseAdminClient.mockReturnValue({ from });
+
+    const repository = createSupabaseProductsRepository();
+
+    await expect(repository.hasUnsafeDeleteReferences("550e8400-e29b-41d4-a716-446655440000")).resolves.toBe(false);
+
+    expect(from).toHaveBeenCalledWith("order_items");
+    expect(eq).toHaveBeenCalledWith("product_id", "550e8400-e29b-41d4-a716-446655440000");
+    expect(is).toHaveBeenCalledWith("orders.archived_at", null);
+    expect(or).toHaveBeenCalledWith("payment_status.eq.pending,inventory_status.in.(reserved,conflict)", { foreignTable: "orders" });
+  });
+
   it("blocks product deletion for pending, reserved, or conflict references", async () => {
     const repository = {
       hasUnsafeDeleteReferences: vi.fn(async () => true),
