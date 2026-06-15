@@ -2,13 +2,17 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
+
 const supabaseAdmin = vi.hoisted(() => ({
   createSupabaseAdminClient: vi.fn(),
 }));
 
 vi.mock("@/server/supabase/admin", () => supabaseAdmin);
 
-import { archiveProductAction, createProductAction, createSupabaseProductsRepository, updateProductAction } from "@/server/admin/actions/products";
+import { archiveProductAction, createProductAction, createSupabaseProductsRepository, deleteProductAction, updateProductAction } from "@/server/admin/actions/products";
 import { archiveOrderAction, updateOrderFulfillmentStatusAction, type OrdersRepository } from "@/server/admin/actions/orders";
 import { updateSettingsAction } from "@/server/admin/actions/settings";
 import { buildProductImagePath } from "@/server/admin/storage";
@@ -147,6 +151,60 @@ describe("admin product actions", () => {
     await expect(archiveProductAction("bad/id", { repository, assertAdmin: allowAdmin })).rejects.toThrow("ID de producto inválido");
 
     expect(repository.archiveProduct).toHaveBeenCalledOnce();
+  });
+
+  it("deletes products only after admin validation and unsafe reference check", async () => {
+    const repository = {
+      hasUnsafeDeleteReferences: vi.fn(async () => false),
+      deleteProduct: vi.fn(async (id) => ({ id })),
+    };
+
+    await expect(deleteProductAction("550e8400-e29b-41d4-a716-446655440000", { repository, assertAdmin: allowAdmin, confirmedDelete: true }))
+      .resolves.toEqual({ id: "550e8400-e29b-41d4-a716-446655440000" });
+
+    expect(repository.hasUnsafeDeleteReferences).toHaveBeenCalledWith("550e8400-e29b-41d4-a716-446655440000");
+    expect(repository.deleteProduct).toHaveBeenCalledWith("550e8400-e29b-41d4-a716-446655440000");
+  });
+
+  it("blocks product deletion for pending, reserved, or conflict references", async () => {
+    const repository = {
+      hasUnsafeDeleteReferences: vi.fn(async () => true),
+      deleteProduct: vi.fn(),
+    };
+
+    await expect(deleteProductAction("550e8400-e29b-41d4-a716-446655440000", { repository, assertAdmin: allowAdmin, confirmedDelete: true }))
+      .rejects.toThrow("No podés eliminar este producto porque tiene órdenes pendientes o reservas activas.");
+
+    expect(repository.deleteProduct).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid or non-admin product deletion before repository mutation", async () => {
+    const repository = {
+      hasUnsafeDeleteReferences: vi.fn(),
+      deleteProduct: vi.fn(),
+    };
+    const assertAdmin = vi.fn(async () => {
+      throw new Error("No autorizado");
+    });
+
+    await expect(deleteProductAction("bad/id", { repository, assertAdmin: allowAdmin, confirmedDelete: true })).rejects.toThrow("ID de producto inválido");
+    await expect(deleteProductAction("550e8400-e29b-41d4-a716-446655440000", { repository, assertAdmin, confirmedDelete: true })).rejects.toThrow("No autorizado");
+
+    expect(repository.hasUnsafeDeleteReferences).not.toHaveBeenCalled();
+    expect(repository.deleteProduct).not.toHaveBeenCalled();
+  });
+
+  it("requires explicit delete confirmation before product repository mutation", async () => {
+    const repository = {
+      hasUnsafeDeleteReferences: vi.fn(),
+      deleteProduct: vi.fn(),
+    };
+
+    await expect(deleteProductAction("550e8400-e29b-41d4-a716-446655440000", { repository, assertAdmin: allowAdmin }))
+      .rejects.toThrow("Debes confirmar la eliminación del producto.");
+
+    expect(repository.hasUnsafeDeleteReferences).not.toHaveBeenCalled();
+    expect(repository.deleteProduct).not.toHaveBeenCalled();
   });
 });
 

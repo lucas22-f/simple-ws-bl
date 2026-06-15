@@ -10,6 +10,7 @@ const actions = {
   create: "#create",
   update: "#update",
   archive: "#archive",
+  delete: "#delete",
 };
 
 const products = [
@@ -59,11 +60,28 @@ describe("AdminProductsView", () => {
     expect(html).toContain("Vista previa del precio publicado");
     expect(html).toContain("Publicado");
     expect(html).toContain("137,50");
-    expect(html).toContain("Imagen del producto");
-    expect(html).toContain("optimiza automáticamente");
     expect(html).toContain("Ver imagen");
     expect(html).toContain("/images/mate.webp");
     expect(html).toContain("Sin imagen disponible");
+  });
+
+  it("keeps the products overview focused on management without the create form", () => {
+    const html = renderToStaticMarkup(createElement(AdminProductsView, { products, actions }));
+
+    expect(html).toContain("/admin/products/new");
+    expect(html).toContain("Agregar producto");
+    expect(html).not.toContain("Crear producto");
+    expect(html).not.toContain("Guardar producto");
+    expect(html).not.toContain("Imagen del producto");
+  });
+
+  it("renders the product creation form on the dedicated new product route", async () => {
+    const { default: AdminProductNewPage } = await import("@/app/admin/products/new/page");
+    const html = renderToStaticMarkup(await AdminProductNewPage());
+
+    expect(html).toContain("Crear producto");
+    expect(html).toContain("Guardar producto");
+    expect(html).toContain("Imagen del producto");
   });
 
   it("renders pagination controls for large product inventories", () => {
@@ -85,7 +103,7 @@ describe("AdminProductsView", () => {
     const html = renderToStaticMarkup(createElement(AdminProductsView, { products: [], actions }));
 
     expect(html).toContain("Todavía no hay productos cargados");
-    expect(html).toContain("Creá el primero con el formulario");
+    expect(html).toContain("/admin/products/new");
   });
 });
 

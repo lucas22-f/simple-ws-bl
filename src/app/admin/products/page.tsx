@@ -2,7 +2,7 @@ import { revalidatePath } from "next/cache";
 import { AdminProductsView } from "@/app/admin/products/product-management";
 import { actionError, actionSuccess, getErrorMessage, type FormActionState } from "@/lib/form-state";
 import { parsePageParam } from "@/lib/pagination";
-import { archiveProductAction, createProductAction, updateProductAction } from "@/server/admin/actions/products";
+import { archiveProductAction, createProductAction, deleteProductAction, updateProductAction } from "@/server/admin/actions/products";
 import { listAdminProductsPage } from "@/server/products/queries";
 
 export const dynamic = "force-dynamic";
@@ -49,10 +49,24 @@ async function archiveProduct(_state: FormActionState, formData: FormData): Prom
   }
 }
 
+async function deleteProduct(_state: FormActionState, formData: FormData): Promise<FormActionState> {
+  "use server";
+  try {
+    const productId = formData.get("productId");
+    if (typeof productId !== "string") throw new Error("ID de producto inválido");
+    await deleteProductAction(productId, { confirmedDelete: formData.get("confirmDelete") === "true" });
+    revalidatePath("/admin/products");
+    return actionSuccess("Producto eliminado. El historial de órdenes queda preservado.");
+  } catch (error) {
+    return actionError(getErrorMessage(error, "No pudimos eliminar el producto."));
+  }
+}
+
 const pageActions = {
   create: saveProduct,
   update: saveProductUpdate,
   archive: archiveProduct,
+  delete: deleteProduct,
 };
 
 type AdminProductsPageProps = {

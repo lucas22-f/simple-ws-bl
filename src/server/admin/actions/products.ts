@@ -1,4 +1,5 @@
 import "server-only";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { calculatePublishedPriceCents, parseCurrencyAmountToCents } from "@/lib/money";
 import { assertAdminActionAccess, type AdminActionAuthOptions } from "@/server/admin/actions/auth";
@@ -38,10 +39,13 @@ export type ProductsRepository = {
   uploadProductImage(productId: string, image: ProductImageInput): Promise<unknown>;
   updateProduct(productId: string, product: ProductInput): Promise<unknown>;
   archiveProduct(productId: string): Promise<unknown>;
+  hasUnsafeDeleteReferences(productId: string): Promise<boolean>;
+  deleteProduct(productId: string): Promise<unknown>;
 };
 
 type ProductActionOptions<TRepository> = AdminActionAuthOptions & {
   repository?: TRepository;
+  confirmedDelete?: boolean;
 };
 
 function getBasePriceCents(product: ProductInput) {
@@ -179,6 +183,22 @@ export function createSupabaseProductsRepository(): ProductsRepository {
       if (error) throw new Error("No pudimos archivar el producto");
       return data;
     },
+    async hasUnsafeDeleteReferences(productId) {
+      const { data, error } = await supabase
+        .from("order_items")
+        .select("id, orders!inner(payment_status, inventory_status)")
+        .eq("product_id", productId)
+        .or("payment_status.eq.pending,inventory_status.in.(reserved,conflict)", { foreignTable: "orders" })
+        .limit(1);
+
+      if (error) throw new Error("No pudimos validar si el producto se puede eliminar");
+      return (data?.length ?? 0) > 0;
+    },
+    async deleteProduct(productId) {
+      const { data, error } = await supabase.from("products").delete().eq("id", productId).select("*").single();
+      if (error) throw new Error("No pudimos eliminar el producto");
+      return data;
+    },
   };
 }
 
@@ -231,4 +251,23 @@ export async function archiveProductAction(productId: string, options: ProductAc
   await assertAdminActionAccess(options);
   const repository = options.repository ?? createSupabaseProductsRepository();
   return repository.archiveProduct(parseProductId(productId));
+}
+
+export async function deleteProductAction(productId: string, options: ProductActionOptions<Pick<ProductsRepository, "hasUnsafeDeleteReferences" | "deleteProduct">> = {}) {
+  await assertAdminActionAccess(options);
+  if (options.confirmedDelete !== true) {
+    throw new Error("Debes confirmar la eliminación del producto.");
+  }
+
+  const repository = options.repository ?? createSupabaseProductsRepository();
+  const parsedProductId = parseProductId(productId);
+  const hasUnsafeReferences = await repository.hasUnsafeDeleteReferences(parsedProductId);
+
+  if (hasUnsafeReferences) {
+    throw new Error("No podés eliminar este producto porque tiene órdenes pendientes o reservas activas.");
+  }
+
+  const deletedProduct = await repository.deleteProduct(parsedProductId);
+  revalidatePath("/admin/products");
+  return deletedProduct;
 }
