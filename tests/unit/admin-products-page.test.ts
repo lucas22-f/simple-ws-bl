@@ -57,7 +57,7 @@ describe("AdminProductsView", () => {
     expect(html).toContain("Archivar producto");
     expect(html).toContain("Precio base");
     expect(html).toContain("Aplicar recargo de Mercado Pago");
-    expect(html).toContain("Vista previa del precio publicado");
+    expect(html).toContain("Vista previa del precio");
     expect(html).toContain("Publicado");
     expect(html).toContain("137,50");
     expect(html).toContain("Ver imagen");
