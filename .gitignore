@@ -36,6 +36,9 @@ yarn-error.log*
 pnpm-debug.log*
 
 
+# local docs / output
+output/
+
 # local agent artifacts
 .atl/
 .vercel
