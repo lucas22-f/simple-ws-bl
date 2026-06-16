@@ -3,6 +3,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/admin/orders",
+  useRouter: () => ({ replace: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 import { AdminOrdersForm } from "@/app/admin/orders/admin-orders-form";
 import { listAdminOrders, mapAdminOrderRow } from "@/server/orders/queries";
@@ -47,7 +52,12 @@ describe("AdminOrdersForm", () => {
     expect(html).toContain("va a aparecer acá automáticamente");
   });
 
+  it("renders a search input with the current query", () => {
+    const html = renderToStaticMarkup(createElement(AdminOrdersForm, { orders, action, archiveAction, searchQuery: "ada" }));
 
+    expect(html).toContain('placeholder="Buscar por ID de orden o nombre del cliente"');
+    expect(html).toMatch(/(?:defaultValue|value)="ada"/);
+  });
 
   it("renders compact order cards with confirmed archive controls", () => {
     const html = renderToStaticMarkup(createElement(AdminOrdersForm, { orders, action, archiveAction }));
@@ -73,7 +83,7 @@ describe("AdminOrdersForm", () => {
 
     await AdminOrdersPage({ searchParams: Promise.resolve({ page: "2" }) });
 
-    expect(listAdminOrdersPageMock).toHaveBeenCalledWith({ page: 2, pageSize: 4 });
+    expect(listAdminOrdersPageMock).toHaveBeenCalledWith({ page: 2, pageSize: 4, includeArchived: false, search: undefined });
   });
 
   it("renders pagination controls for long order lists", () => {
@@ -90,6 +100,20 @@ describe("AdminOrdersForm", () => {
     expect(html).toContain("1-1");
     expect(html).toContain("11");
     expect(html).toContain("/admin/orders?page=2");
+  });
+
+  it("preserves search query in pagination links", () => {
+    const html = renderToStaticMarkup(
+      createElement(AdminOrdersForm, {
+        orders,
+        action,
+        archiveAction,
+        pagination: { page: 1, pageSize: 1, totalItems: 11, totalPages: 11 },
+        searchQuery: "ada",
+      }),
+    );
+
+    expect(html).toContain("q=ada");
   });
 });
 
@@ -128,6 +152,36 @@ describe("admin order queries", () => {
     await expect(listAdminOrders({ client, search: "Ada", page: 2, pageSize: 4 })).resolves.toEqual([]);
 
     expect(client.listAdminOrders).toHaveBeenCalledWith({ page: 2, pageSize: 4, includeArchived: false, search: "Ada" });
+  });
+
+  it("passes search param to admin order query", async () => {
+    vi.resetModules();
+    const listAdminOrdersPageMock = vi.fn(async () => ({ orders: [], pagination: { page: 1, pageSize: 4, totalItems: 0, totalPages: 0 } }));
+    vi.doMock("@/server/orders/queries", () => ({ listAdminOrdersPage: listAdminOrdersPageMock }));
+    vi.doMock("@/server/admin/actions/orders", () => ({
+      updateOrderFulfillmentStatusAction: vi.fn(),
+      archiveOrderAction: vi.fn(),
+    }));
+    const { default: AdminOrdersPage } = await import("@/app/admin/orders/page");
+
+    await AdminOrdersPage({ searchParams: Promise.resolve({ q: "ada", page: "2" }) });
+
+    expect(listAdminOrdersPageMock).toHaveBeenCalledWith(expect.objectContaining({ search: "ada" }));
+  });
+
+  it("passes search with includeArchived false by default", async () => {
+    vi.resetModules();
+    const listAdminOrdersPageMock = vi.fn(async () => ({ orders: [], pagination: { page: 1, pageSize: 4, totalItems: 0, totalPages: 0 } }));
+    vi.doMock("@/server/orders/queries", () => ({ listAdminOrdersPage: listAdminOrdersPageMock }));
+    vi.doMock("@/server/admin/actions/orders", () => ({
+      updateOrderFulfillmentStatusAction: vi.fn(),
+      archiveOrderAction: vi.fn(),
+    }));
+    const { default: AdminOrdersPage } = await import("@/app/admin/orders/page");
+
+    await AdminOrdersPage({ searchParams: Promise.resolve({ q: "ada", page: "2" }) });
+
+    expect(listAdminOrdersPageMock).toHaveBeenCalledWith(expect.objectContaining({ includeArchived: false, search: "ada" }));
   });
 
   it("fails explicitly when Supabase cannot load orders", async () => {

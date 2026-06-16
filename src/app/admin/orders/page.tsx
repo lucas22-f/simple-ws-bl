@@ -40,11 +40,17 @@ async function archiveOrder(_state: FormActionState, formData: FormData): Promis
 }
 
 type AdminOrdersPageProps = {
-  searchParams?: Promise<{ page?: string }>;
+  searchParams?: Promise<{ q?: string; page?: string }>;
 };
 
 export default async function AdminOrdersPage({ searchParams }: AdminOrdersPageProps) {
   const params = await searchParams;
-  const { orders, pagination } = await listAdminOrdersPage({ page: parsePageParam(params?.page), pageSize: ADMIN_ORDERS_PAGE_SIZE });
-  return <AdminOrdersForm action={updateOrder} archiveAction={archiveOrder} orders={orders} pagination={pagination} />;
+  const { q } = params ?? {};
+  const { orders, pagination } = await listAdminOrdersPage({
+    page: parsePageParam(params?.page),
+    pageSize: ADMIN_ORDERS_PAGE_SIZE,
+    includeArchived: false,
+    search: q,
+  });
+  return <AdminOrdersForm action={updateOrder} archiveAction={archiveOrder} orders={orders} pagination={pagination} searchQuery={q ?? ""} />;
 }

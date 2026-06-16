@@ -4,6 +4,7 @@ import * as React from "react";
 import { useActionState } from "react";
 import { Archive, Banknote, ClipboardCheck, Clock3, PackageCheck, PackageSearch, ShoppingBag } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminSearchInput } from "@/components/admin/admin-search-input";
 import { FieldMessage, FormToast } from "@/components/ui/form-feedback";
 import { FormLoadingOverlay } from "@/components/ui/loading-overlay";
 import { PaginationControls } from "@/components/ui/pagination";
@@ -18,6 +19,7 @@ type AdminOrdersFormProps = {
   archiveAction: (state: FormActionState, formData: FormData) => Promise<FormActionState>;
   orders: AdminOrder[];
   pagination?: PaginationState;
+  searchQuery?: string;
 };
 
 const fieldClassName = "min-h-11 rounded-xl border bg-card px-3 py-2 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 focus-visible:ring-2 focus-visible:ring-ring";
@@ -113,7 +115,7 @@ function OrderArchiveForm({ action, order }: { action: AdminOrdersFormProps["arc
   );
 }
 
-export function AdminOrdersForm({ action, archiveAction, orders, pagination }: AdminOrdersFormProps) {
+export function AdminOrdersForm({ action, archiveAction, orders, pagination, searchQuery }: AdminOrdersFormProps) {
   const pendingOrders = orders.filter((order) => order.fulfillmentStatus === "pending").length;
   const processingOrders = orders.filter((order) => order.fulfillmentStatus === "processing").length;
   const paidOrders = orders.filter((order) => order.paymentStatus === "paid").length;
@@ -138,6 +140,14 @@ export function AdminOrdersForm({ action, archiveAction, orders, pagination }: A
           </article>
         ))}
       </section>
+
+      <AdminSearchInput
+        basePath="/admin/orders"
+        initialQuery={searchQuery}
+        id="admin-orders-search"
+        label="Buscar órdenes"
+        placeholder="Buscar por ID de orden o nombre del cliente"
+      />
 
       <section className="flex flex-col gap-4">
         <div>
@@ -186,7 +196,7 @@ export function AdminOrdersForm({ action, archiveAction, orders, pagination }: A
               </article>
               ))}
             </div>
-            {pagination ? <PaginationControls pagination={pagination} basePath="/admin/orders" itemLabel="órdenes" /> : null}
+            {pagination ? <PaginationControls pagination={pagination} basePath="/admin/orders" searchParams={{ q: searchQuery || undefined }} itemLabel="órdenes" /> : null}
           </div>
         )}
       </section>
