@@ -3,6 +3,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/admin/products",
+  useRouter: () => ({ replace: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 import { AdminProductsView } from "@/app/admin/products/product-management";
 
@@ -116,6 +121,46 @@ describe("AdminProductsView", () => {
     expect(html).toContain("1-2");
     expect(html).toContain("15");
     expect(html).toContain("/admin/products?page=2");
+  });
+
+  it("renders a search input with the current query", () => {
+    const html = renderToStaticMarkup(createElement(AdminProductsView, { products, actions, searchQuery: "mate" }));
+
+    expect(html).toContain('placeholder="Buscar productos por nombre"');
+    expect(html).toMatch(/(?:defaultValue|value)="mate"/);
+  });
+
+  it("preserves search query in pagination links", () => {
+    const html = renderToStaticMarkup(
+      createElement(AdminProductsView, {
+        products,
+        pagination: { page: 1, pageSize: 2, totalItems: 15, totalPages: 8 },
+        actions,
+        searchQuery: "mate",
+      }),
+    );
+
+    expect(html).toContain("q=mate");
+  });
+
+  it("passes search param to admin product query", async () => {
+    vi.resetModules();
+    const listAdminProductsPageMock = vi.fn(async () => ({
+      products: [],
+      pagination: { page: 1, pageSize: 5, totalItems: 0, totalPages: 0 },
+    }));
+    vi.doMock("@/server/products/queries", () => ({ listAdminProductsPage: listAdminProductsPageMock }));
+    vi.doMock("@/server/admin/actions/products", () => ({
+      createProductAction: vi.fn(),
+      updateProductAction: vi.fn(),
+      archiveProductAction: vi.fn(),
+      deleteProductAction: vi.fn(),
+    }));
+    const { default: AdminProductsPage } = await import("@/app/admin/products/page");
+
+    await AdminProductsPage({ searchParams: Promise.resolve({ q: "mate", page: "2" }) });
+
+    expect(listAdminProductsPageMock).toHaveBeenCalledWith(expect.objectContaining({ search: "mate", page: 2 }));
   });
 
   it("renders an empty state when there are no products", () => {
