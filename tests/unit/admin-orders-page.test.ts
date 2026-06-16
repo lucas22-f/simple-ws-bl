@@ -122,6 +122,14 @@ describe("admin order queries", () => {
     expect(client.listAdminOrders).toHaveBeenCalledWith(expect.objectContaining({ includeArchived: true }));
   });
 
+  it("threads admin order search to the query client while preserving archived filtering", async () => {
+    const client = { listAdminOrders: vi.fn(async () => ({ data: [], error: null, count: 0 })) };
+
+    await expect(listAdminOrders({ client, search: "Ada", page: 2, pageSize: 4 })).resolves.toEqual([]);
+
+    expect(client.listAdminOrders).toHaveBeenCalledWith({ page: 2, pageSize: 4, includeArchived: false, search: "Ada" });
+  });
+
   it("fails explicitly when Supabase cannot load orders", async () => {
     const client = { listAdminOrders: vi.fn(async () => ({ data: null, error: new Error("db down") })) };
 

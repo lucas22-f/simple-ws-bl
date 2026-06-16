@@ -87,7 +87,7 @@ export type ProductQueryClient = {
 };
 
 export type AdminProductQueryClient = {
-  listAdminProducts: (pagination?: PaginationInput) => Promise<{ data: AdminProductRow[] | null; error: unknown; count?: number | null }>;
+  listAdminProducts: (pagination?: PaginationInput & { search?: string }) => Promise<{ data: AdminProductRow[] | null; error: unknown; count?: number | null }>;
 };
 
 export const CATALOG_READ_ERROR_MESSAGE = "No pudimos cargar el catálogo. Probá de nuevo en unos minutos.";
@@ -199,6 +199,7 @@ export function createSupabaseProductQueryClient(): ProductQueryClient {
 export function createSupabaseAdminProductQueryClient(): AdminProductQueryClient {
   return {
     async listAdminProducts(pagination = {}) {
+      const { search: searchValue, ...paginationInput } = pagination;
       const { createSupabaseAdminClient } = await import("@/server/supabase/admin");
       const supabase = createSupabaseAdminClient();
       let query = supabase
@@ -206,13 +207,19 @@ export function createSupabaseAdminProductQueryClient(): AdminProductQueryClient
         .select(
           "id, name, slug, description, price_cents, base_price_cents, apply_mercado_pago_surcharge, currency, active, featured, stock_quantity, product_images(storage_path, alt_text, sort_order, active)",
           {
-            count: pagination.pageSize ? "exact" : undefined,
+            count: paginationInput.pageSize ? "exact" : undefined,
           },
         )
         .order("created_at", { ascending: false });
 
-      if (pagination.pageSize) {
-        const { from, to } = getPaginationRange({ page: pagination.page ?? 1, pageSize: pagination.pageSize });
+      const search = normalizeSearch(searchValue);
+      if (search) {
+        const escapedSearch = search.replaceAll("%", "\\%").replaceAll("_", "\\_");
+        query = query.ilike("name", `%${escapedSearch}%`);
+      }
+
+      if (paginationInput.pageSize) {
+        const { from, to } = getPaginationRange({ page: paginationInput.page ?? 1, pageSize: paginationInput.pageSize });
         query = query.range(from, to);
       }
 
@@ -321,14 +328,14 @@ export async function getProductListState(options: { client?: ProductQueryClient
   }
 }
 
-export async function listAdminProducts(options: { client?: AdminProductQueryClient } = {}) {
+export async function listAdminProducts(options: { client?: AdminProductQueryClient; search?: string } & PaginationInput = {}) {
   const { products } = await listAdminProductsPage(options);
   return products;
 }
 
-export async function listAdminProductsPage(options: { client?: AdminProductQueryClient } & PaginationInput = {}) {
+export async function listAdminProductsPage(options: { client?: AdminProductQueryClient; search?: string } & PaginationInput = {}) {
   const client = options.client ?? createSupabaseAdminProductQueryClient();
-  const { data, error, count } = await client.listAdminProducts({ page: options.page, pageSize: options.pageSize });
+  const { data, error, count } = await client.listAdminProducts({ page: options.page, pageSize: options.pageSize, search: options.search });
 
   if (error) {
     throw new ProductCatalogReadError(error);
