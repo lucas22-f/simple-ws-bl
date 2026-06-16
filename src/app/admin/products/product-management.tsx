@@ -4,6 +4,7 @@ import * as React from "react";
 import { useActionState } from "react";
 import { Archive, Boxes, CircleDollarSign, Eye, ImageOff, ImagePlus, PackageCheck, PackagePlus, PencilLine, Sparkles, Trash2, X } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { AdminSearchInput } from "@/components/admin/admin-search-input";
 import { Button } from "@/components/ui/button";
 import { FieldMessage, FormToast } from "@/components/ui/form-feedback";
 import { FormLoadingOverlay } from "@/components/ui/loading-overlay";
@@ -21,6 +22,7 @@ export type ProductFormAction = string | ((state: FormActionState, formData: For
 type AdminProductsViewProps = {
   products: AdminProduct[];
   pagination?: PaginationState;
+  searchQuery?: string;
   actions: {
     create: ProductFormAction;
     update: ProductFormAction;
@@ -335,7 +337,7 @@ function ProductEditDialog({ product, actions }: { product: AdminProduct; action
   );
 }
 
-export function AdminProductsView({ products, pagination, actions }: AdminProductsViewProps) {
+export function AdminProductsView({ products, pagination, actions, searchQuery = "" }: AdminProductsViewProps) {
   const publishedProducts = products.filter((product) => product.active).length;
   const featuredProducts = products.filter((product) => product.featured).length;
   const trackedStock = products.reduce((total, product) => total + (product.stockQuantity ?? 0), 0);
@@ -360,6 +362,14 @@ export function AdminProductsView({ products, pagination, actions }: AdminProduc
           </article>
         ))}
       </section>
+
+      <AdminSearchInput
+        basePath="/admin/products"
+        initialQuery={searchQuery}
+        id="admin-products-search"
+        label="Buscar productos"
+        placeholder="Buscar productos por nombre"
+      />
 
       <section className="flex flex-col gap-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -435,7 +445,7 @@ export function AdminProductsView({ products, pagination, actions }: AdminProduc
                 );
               })}
             </div>
-            {pagination ? <PaginationControls pagination={pagination} basePath="/admin/products" itemLabel="productos" /> : null}
+            {pagination ? <PaginationControls pagination={pagination} basePath="/admin/products" searchParams={{ q: searchQuery || undefined }} itemLabel="productos" /> : null}
           </div>
         )}
       </section>

@@ -1,3 +1,4 @@
+import * as React from "react";
 import { revalidatePath } from "next/cache";
 import { AdminProductsView } from "@/app/admin/products/product-management";
 import { actionError, actionSuccess, getErrorMessage, type FormActionState } from "@/lib/form-state";
@@ -70,11 +71,12 @@ const pageActions = {
 };
 
 type AdminProductsPageProps = {
-  searchParams?: Promise<{ page?: string }>;
+  searchParams?: Promise<{ q?: string; page?: string }>;
 };
 
 export default async function AdminProductsPage({ searchParams }: AdminProductsPageProps) {
   const params = await searchParams;
-  const { products, pagination } = await listAdminProductsPage({ page: parsePageParam(params?.page), pageSize: ADMIN_PRODUCTS_PAGE_SIZE });
-  return <AdminProductsView products={products} pagination={pagination} actions={pageActions} />;
+  const { q } = params ?? {};
+  const { products, pagination } = await listAdminProductsPage({ page: parsePageParam(params?.page), pageSize: ADMIN_PRODUCTS_PAGE_SIZE, search: q });
+  return <AdminProductsView products={products} pagination={pagination} actions={pageActions} searchQuery={q ?? ""} />;
 }
