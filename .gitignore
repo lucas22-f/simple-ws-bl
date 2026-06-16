@@ -42,3 +42,6 @@ output/
 # local agent artifacts
 .atl/
 .vercel
+
+# local scripts (not part of the app)
+scripts/generate-pdf.mjs
