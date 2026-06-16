@@ -154,66 +154,66 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
           </div>
 
           <div className="mt-8">
-              {showcaseProducts.length > 0 ? (
-                <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8 xl:grid-cols-3" aria-label="Productos destacados">
-                  {showcaseProducts.map((product) => {
-                    const productImage = product.images[0];
+            {showcaseProducts.length > 0 ? (
+              <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-8 xl:grid-cols-3" aria-label="Productos destacados">
+                {showcaseProducts.map((product) => {
+                  const productImage = product.images[0];
 
-                    return (
-                      <article
-                        key={product.id}
-                        className="group animate-in-up overflow-hidden rounded-xl border border-border bg-card shadow-[0_2px_8px_rgb(37_26_18/0.08)] transition-shadow hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]"
+                  return (
+                    <article
+                      key={product.id}
+                      className="group animate-in-up overflow-hidden rounded-xl border border-border bg-card shadow-[0_2px_8px_rgb(37_26_18/0.08)] transition-shadow hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]"
+                    >
+                      <NavigationLink
+                        className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        href={`/products/${product.slug}`}
+                        pendingTitle="Cargando detalle"
+                        pendingDescription="Preparamos la ficha completa del producto."
                       >
-                        <NavigationLink
-                          className="block rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          href={`/products/${product.slug}`}
-                          pendingTitle="Cargando detalle"
-                          pendingDescription="Preparamos la ficha completa del producto."
-                        >
-                          <div className="relative aspect-[4/5] overflow-hidden bg-muted">
-                            {productImage ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={productImage.storagePath}
-                                alt={productImage.altText || product.name}
-                                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                              />
-                            ) : (
-                              <div className="flex h-full items-center justify-center p-6 text-center text-sm font-medium text-muted-foreground">
-                                Imagen de {product.name}
-                              </div>
-                            )}
-                            <span className="absolute left-2 top-2 max-w-[calc(100%-1rem)] truncate rounded-full bg-background/90 px-2 py-1 text-[0.625rem] font-semibold text-muted-foreground shadow-sm backdrop-blur-sm sm:left-3 sm:top-3 sm:px-3 sm:text-xs">
-                              {product.category?.name ?? "Bazar"}
-                            </span>
-                          </div>
-                          <div className="p-3 sm:p-4">
-                            <h3 className="font-heading text-base font-semibold leading-tight transition-colors group-hover:text-primary sm:text-xl">
-                              {product.name}
-                            </h3>
-                            <p className="mt-2 hidden line-clamp-2 text-sm leading-6 text-muted-foreground sm:block">{product.description}</p>
-                            <p className="mt-2 font-heading text-base font-semibold text-primary sm:mt-3 sm:text-xl">
-                              {formatMoney({ amountCents: product.priceCents, currency: product.currency })}
-                            </p>
-                          </div>
-                        </NavigationLink>
-                      </article>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-border bg-card p-8 text-muted-foreground shadow-[0_2px_8px_rgb(37_26_18/0.08)]">
-                  <PackageSearch className="h-7 w-7 text-primary" aria-hidden="true" />
-                  <p className="mt-4 font-heading text-xl font-semibold text-foreground">La colección está en preparación</p>
-                  <p className="mt-2 text-sm leading-6">Cuando publiques productos activos desde el admin, van a aparecer acá.</p>
-                </div>
-              )}
+                        <div className="relative aspect-4/5 overflow-hidden bg-muted">
+                          {productImage ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={productImage.storagePath}
+                              alt={productImage.altText || product.name}
+                              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="flex h-full items-center justify-center p-6 text-center text-sm font-medium text-muted-foreground">
+                              Imagen de {product.name}
+                            </div>
+                          )}
+                          <span className="absolute left-2 top-2 max-w-[calc(100%-1rem)] truncate rounded-full bg-background/90 px-2 py-1 text-[0.625rem] font-semibold text-muted-foreground shadow-sm backdrop-blur-sm sm:left-3 sm:top-3 sm:px-3 sm:text-xs">
+                            {product.category?.name ?? "Bazar"}
+                          </span>
+                        </div>
+                        <div className="p-3 sm:p-4">
+                          <h3 className="font-heading text-base font-semibold leading-tight transition-colors group-hover:text-primary sm:text-xl">
+                            {product.name}
+                          </h3>
+                          <p className="mt-2 hidden line-clamp-2 text-sm leading-6 text-muted-foreground sm:block">{product.description}</p>
+                          <p className="mt-2 font-heading text-base font-semibold text-primary sm:mt-3 sm:text-xl">
+                            {formatMoney({ amountCents: product.priceCents, currency: product.currency })}
+                          </p>
+                        </div>
+                      </NavigationLink>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-border bg-card p-8 text-muted-foreground shadow-[0_2px_8px_rgb(37_26_18/0.08)]">
+                <PackageSearch className="h-7 w-7 text-primary" aria-hidden="true" />
+                <p className="mt-4 font-heading text-xl font-semibold text-foreground">La colección está en preparación</p>
+                <p className="mt-2 text-sm leading-6">Cuando publiques productos activos desde el admin, van a aparecer acá.</p>
+              </div>
+            )}
 
-              {catalog.status === "error" ? (
-                <div className="mt-6 rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground" role="status">
-                  {catalog.message}
-                </div>
-              ) : null}
+            {catalog.status === "error" ? (
+              <div className="mt-6 rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground" role="status">
+                {catalog.message}
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
@@ -234,7 +234,7 @@ export function StoreHomeView({ catalog }: StoreHomeViewProps) {
                 key={story.title}
                 className="group relative min-w-[82%] snap-center overflow-hidden rounded-xl border border-background/15 bg-background/5 sm:min-w-[48%] lg:min-w-0"
               >
-                <div className="relative aspect-[4/3] overflow-hidden">
+                <div className="relative aspect-4/3 overflow-hidden">
                   <Image
                     src={story.image}
                     alt=""

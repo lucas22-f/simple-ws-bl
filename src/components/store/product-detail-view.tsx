@@ -7,12 +7,12 @@ import { NavigationLink } from "@/components/ui/navigation-link";
 
 type ProductDetailState =
   | {
-      status: "ready";
-      product: StorefrontProduct;
-    }
+    status: "ready";
+    product: StorefrontProduct;
+  }
   | {
-      status: "error";
-    };
+    status: "error";
+  };
 
 type ProductDetailViewProps = {
   state: ProductDetailState;
@@ -35,7 +35,7 @@ export function ProductDetailView({ state }: ProductDetailViewProps) {
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)] lg:items-start">
           <div className="space-y-4 animate-in-up" aria-label={`Galería de ${product.name}`}>
-            <div className="overflow-hidden rounded-[2rem] border border-border bg-muted shadow-sm">
+            <div className="overflow-hidden rounded-4xl border border-border bg-muted shadow-sm">
               {primaryImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img className="aspect-square h-full w-full object-cover" src={primaryImage.storagePath} alt={primaryImage.altText || product.name} />
@@ -69,7 +69,7 @@ export function ProductDetailView({ state }: ProductDetailViewProps) {
             ) : null}
           </div>
 
-          <div className="rounded-[2rem] border border-border bg-card p-5 shadow-sm animate-in-up sm:p-6 lg:sticky lg:top-8">
+          <div className="rounded-4xl border border-border bg-card p-5 shadow-sm animate-in-up sm:p-6 lg:sticky lg:top-8">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">Artesanías / {categoryName}</p>
             <h1 id="product-title" className="mt-3 font-heading text-3xl font-semibold leading-tight tracking-tight text-foreground md:text-4xl">
               {product.name}
@@ -119,7 +119,7 @@ function ProductDetailErrorView() {
     <main className="mx-auto min-h-screen max-w-7xl px-4 py-6 font-body sm:px-6 sm:py-10 lg:px-8">
       <section className="space-y-6" aria-labelledby="product-error-title">
         <ProductBreadcrumb />
-        <div className="flex flex-col items-center justify-center rounded-[2rem] border border-border bg-card px-6 py-16 text-center shadow-sm animate-in-up" role="status">
+        <div className="flex flex-col items-center justify-center rounded-4xl border border-border bg-card px-6 py-16 text-center shadow-sm animate-in-up" role="status">
           <div className="mb-5 rounded-full bg-muted p-5">
             <ShoppingBag className="h-8 w-8 text-primary" aria-hidden="true" />
           </div>

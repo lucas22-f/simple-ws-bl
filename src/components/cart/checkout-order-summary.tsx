@@ -27,7 +27,7 @@ export function CheckoutOrderSummary() {
         <ul className="mt-5 space-y-4" aria-label="Productos del pedido">
           {items.map((item) => (
             <li key={item.productId} className="flex gap-3">
-              <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-2xl border border-border bg-muted">
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-border bg-muted">
                 {item.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={item.imageUrl} alt={`Imagen de ${item.name}`} className="h-full w-full object-cover" />

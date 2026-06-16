@@ -43,7 +43,7 @@ function CheckoutSection({ step, title, description, children }: CheckoutSection
   return (
     <section className="rounded-3xl border border-border bg-card p-5 shadow-sm animate-in-up sm:p-6">
       <div className="mb-5 flex items-start gap-3">
-        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
           {step}
         </span>
         <div>

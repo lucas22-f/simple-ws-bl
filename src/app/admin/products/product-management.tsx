@@ -410,7 +410,7 @@ export function AdminProductsView({ products, pagination, actions, searchQuery =
 
                 return (
                   <article key={product.id} aria-label={`Producto ${product.name}`} className="group animate-in-up overflow-hidden rounded-xl border border-border bg-card shadow-[0_2px_8px_rgb(37_26_18/0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)]">
-                    <div className="relative aspect-square overflow-hidden bg-muted sm:aspect-[4/3]">
+                    <div className="relative aspect-square overflow-hidden bg-muted sm:aspect-4/3">
                       {productImage ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img className="h-full w-full object-cover transition duration-500 group-hover:scale-105" src={productImage.storagePath} alt={productImage.altText || product.name} />

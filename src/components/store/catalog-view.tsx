@@ -23,7 +23,7 @@ export function CatalogView({ catalog, searchQuery = "", categorySlug }: Catalog
   return (
     <main className="mx-auto min-h-screen max-w-7xl px-4 py-6 font-body sm:px-6 sm:py-10 lg:px-8">
       <section className="space-y-8 lg:space-y-10" aria-labelledby="catalog-title">
-        <div className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-sm animate-in-up">
+        <div className="overflow-hidden rounded-4xl border border-border bg-card shadow-sm animate-in-up">
           <div className="bg-muted px-5 py-8 sm:px-8 sm:py-12 lg:px-10 lg:py-14">
             <NavigationLink
               className="inline-flex text-sm font-semibold text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -92,7 +92,7 @@ export function CatalogView({ catalog, searchQuery = "", categorySlug }: Catalog
                     className="group overflow-hidden rounded-xl border-border shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgb(37_26_18/0.12)] sm:rounded-3xl animate-in-up"
                   >
                     <article>
-                      <div className="relative aspect-[4/5] overflow-hidden bg-muted">
+                      <div className="relative aspect-4/5 overflow-hidden bg-muted">
                         {productImage ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -163,7 +163,7 @@ type CatalogStateCardProps = {
 
 function CatalogStateCard({ title, description, actionLabel, href }: CatalogStateCardProps) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-[2rem] border border-border bg-card px-6 py-16 text-center shadow-sm animate-in-up" role="status">
+    <div className="flex flex-col items-center justify-center rounded-4xl border border-border bg-card px-6 py-16 text-center shadow-sm animate-in-up" role="status">
       <div className="mb-5 rounded-full bg-muted p-5">
         <PackageSearch className="h-8 w-8 text-primary" aria-hidden="true" />
       </div>

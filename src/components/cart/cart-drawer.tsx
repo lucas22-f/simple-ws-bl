@@ -206,7 +206,7 @@ export function CartDrawer() {
           <div data-cart-portal-root ref={portalRootRef}>
             <div
               className={[
-                "fixed inset-0 z-[60] bg-foreground/25 backdrop-blur-sm transition-opacity duration-300",
+                "fixed inset-0 z-60 bg-foreground/25 backdrop-blur-sm transition-opacity duration-300",
                 open ? "opacity-100" : "pointer-events-none opacity-0",
               ].join(" ")}
               aria-hidden="true"
@@ -223,7 +223,7 @@ export function CartDrawer() {
               ref={dialogRef}
               tabIndex={-1}
               className={[
-                "fixed inset-y-0 right-0 z-[70] flex w-full max-w-md flex-col border-l border-border bg-background shadow-[-16px_0_40px_rgb(37_26_18/0.16)] transition-transform duration-300 ease-out",
+                "fixed inset-y-0 right-0 z-70 flex w-full max-w-md flex-col border-l border-border bg-background shadow-[-16px_0_40px_rgb(37_26_18/0.16)] transition-transform duration-300 ease-out",
                 open ? "translate-x-0" : "translate-x-full",
               ].join(" ")}
             >
@@ -248,7 +248,7 @@ export function CartDrawer() {
                   <ul className="space-y-5" aria-label="Productos en el carrito">
                     {items.map((item) => (
                       <li key={item.productId} className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-4 border-b border-border pb-5">
-                        <div className="h-[4.5rem] w-[4.5rem] overflow-hidden rounded-xl border border-border bg-muted">
+                        <div className="h-18 w-18 overflow-hidden rounded-xl border border-border bg-muted">
                           {item.imageUrl ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
