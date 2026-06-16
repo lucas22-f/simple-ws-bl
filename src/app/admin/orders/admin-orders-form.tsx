@@ -158,8 +158,17 @@ export function AdminOrdersForm({ action, archiveAction, orders, pagination, sea
         {orders.length === 0 ? (
           <div className="rounded-xl border border-dashed bg-card p-6 text-muted-foreground">
             <PackageSearch className="h-6 w-6 text-primary" aria-hidden="true" />
-            <p className="mt-3 font-semibold text-foreground">Todavía no hay órdenes para gestionar.</p>
-            <p>Cuando ingrese una compra, va a aparecer acá automáticamente.</p>
+            {searchQuery ? (
+              <>
+                <p className="mt-3 font-semibold text-foreground">No encontramos órdenes para &ldquo;{searchQuery}&rdquo;.</p>
+                <p>Probá con otro término de búsqueda o revisá el listado completo.</p>
+              </>
+            ) : (
+              <>
+                <p className="mt-3 font-semibold text-foreground">Todavía no hay órdenes para gestionar.</p>
+                <p>Cuando ingrese una compra, va a aparecer acá automáticamente.</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-6">

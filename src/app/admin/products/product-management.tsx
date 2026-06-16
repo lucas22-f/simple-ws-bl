@@ -390,8 +390,17 @@ export function AdminProductsView({ products, pagination, actions, searchQuery =
 
         {products.length === 0 ? (
           <div className="rounded-xl border border-dashed bg-card p-6 text-muted-foreground">
-            <p className="font-semibold text-foreground">Todavía no hay productos cargados.</p>
-            <p>Creá el primero desde la ruta dedicada de alta de productos.</p>
+            {searchQuery ? (
+              <>
+                <p className="font-semibold text-foreground">No encontramos productos para &ldquo;{searchQuery}&rdquo;.</p>
+                <p>Probá con otro término de búsqueda o revisá el catálogo completo.</p>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold text-foreground">Todavía no hay productos cargados.</p>
+                <p>Creá el primero desde la ruta dedicada de alta de productos.</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-6">
