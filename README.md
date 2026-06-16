@@ -15,7 +15,7 @@ Bazar Online fullstack — catálogo público, carrito, checkout con Mercado Pag
 - [Storefront](#storefront)
 - [Admin](#admin)
 - [Pagos y webhook](#pagos-y-webhook)
-- [Supabase local](#supabase-local)
+- [Supabase CLI local](#supabase-cli-local)
 - [Testing](#testing)
 - [CI](#ci)
 - [Deploy](#deploy)
@@ -166,14 +166,14 @@ El panel de administración está protegido por Supabase Auth:
 
 ---
 
-## Supabase local
+## Supabase CLI local
 
 Requisitos y límites:
 
 - Necesitás **Docker Desktop** corriendo para `npm run supabase:start`, `npm run supabase:db:reset` y `npm run supabase:db:lint`.
 - Si ves `Access is denied` leyendo `C:\Users\<usuario>\.docker\config.json`, corregí permisos / reiniciá Docker Desktop antes de usar la DB local.
 - Para remoto, usá `supabase login` y `supabase link` fuera del repo.
-- Remote project credentials: guardalas en Supabase/Vercel o variables locales, nunca en Git. No commitees secrets.
+- Remote project credentials: guardalas en Supabase/Vercel o variables locales, nunca en Git. Do not commit secrets.
 
 ### Migración y seed
 
