@@ -25,7 +25,7 @@ const contactChannels: ContactChannel[] = [
     title: "WhatsApp / Teléfono",
     description:
       "Escribinos por WhatsApp para consultas, pedidos personalizados o cualquier duda que tengas.",
-    href: "https://wa.me/5491123456789",
+    href: "https://wa.me/5491165427871",
     icon: MessageCircle,
     external: true,
     openInNewTab: true,
@@ -43,7 +43,7 @@ const contactChannels: ContactChannel[] = [
     title: "Instagram / Redes sociales",
     description:
       "Seguinos en Instagram para conocer las novedades, promociones y el detrás de escena de Bazar BL.",
-    href: "https://instagram.com/bazarbl",
+    href: "https://instagram.com",
     icon: Instagram,
     external: true,
     openInNewTab: true,
@@ -52,7 +52,7 @@ const contactChannels: ContactChannel[] = [
     title: "Ubicación / Dirección",
     description:
       "Visitanos en nuestro local. Te recomendamos consultar horarios antes de acercarte.",
-    href: "https://maps.google.com/?q=Bazar+BL",
+    href: "https://maps.google.com/?q=Ezeiza",
     icon: MapPin,
     external: true,
     openInNewTab: true,
@@ -221,7 +221,7 @@ export function ContactView() {
               src="https://www.google.com/maps?q=Ezeiza,+Provincia+de+Buenos+Aires,+Argentina&output=embed&z=13"
               width="100%"
               height="300"
-              className="sm:h-[400px]"
+              className="sm:h-100"
               loading="lazy"
               title="Mapa de Ezeiza, Buenos Aires"
               allowFullScreen
