@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
   let profile: AuthProfile = null;
 
   if (user) {
-    const { data } = await supabase.from("profiles").select("id, role").eq("id", user.id).maybeSingle();
+    const { data } = await supabase.from("profiles").select("id, role, admin_status").eq("id", user.id).maybeSingle();
     profile = data as AuthProfile;
   }
 

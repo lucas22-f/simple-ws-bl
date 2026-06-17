@@ -6,11 +6,12 @@ export type ProfileRole = "admin" | "customer";
 export type AuthProfile = {
   id: string;
   role: ProfileRole;
+  admin_status?: "pending" | "approved" | null;
 } | null;
 
 export type AdminAccessDecision =
   | { allowed: true }
-  | { allowed: false; redirectTo: string; reason: "unauthenticated" | "forbidden" | "authenticated" };
+  | { allowed: false; redirectTo: string; reason: "unauthenticated" | "forbidden" | "authenticated" | "pending" };
 
 export function canAccessAdmin(profile: AuthProfile): profile is NonNullable<AuthProfile> & { role: "admin" } {
   return profile?.role === "admin";
@@ -33,8 +34,20 @@ export function isPublicAdminAuthRoute(pathname: string) {
 export function resolveAdminAccess(profile: AuthProfile, currentUrl: string): AdminAccessDecision {
   const url = new URL(currentUrl);
 
+  // Pending admin on protected routes → block
+  if (!isPublicAdminAuthRoute(url.pathname)) {
+    if (profile && profile.role === "admin" && profile.admin_status === "pending") {
+      return {
+        allowed: false,
+        redirectTo: createAdminRedirectUrl(currentUrl, `${url.pathname}${url.search}`).toString(),
+        reason: "pending",
+      };
+    }
+  }
+
   if (isPublicAdminAuthRoute(url.pathname)) {
-    if (canAccessAdmin(profile)) {
+    // Approved admin on auth route → redirect to dashboard
+    if (canAccessAdmin(profile) && profile?.admin_status !== "pending") {
       return {
         allowed: false,
         redirectTo: createAdminDashboardUrl(currentUrl).toString(),
