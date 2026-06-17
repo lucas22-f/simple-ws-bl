@@ -35,7 +35,7 @@ export async function listPendingAdminsAction(
 ): Promise<PendingAdmin[]> {
   await assertCurrentUserIsAdmin();
 
-  const adminClient = deps.adminClient ?? createSupabaseAdminClient();
+  const adminClient: ApprovalsAdminClient = deps.adminClient ?? (createSupabaseAdminClient() as unknown as ApprovalsAdminClient);
   const { data, error } = await adminClient
     .from("profiles")
     .select("id, created_at")
@@ -52,7 +52,7 @@ export async function approveAdminAction(
 ): Promise<{ success: true }> {
   await assertCurrentUserIsAdmin();
 
-  const adminClient = deps.adminClient ?? createSupabaseAdminClient();
+  const adminClient: ApprovalsAdminClient = deps.adminClient ?? (createSupabaseAdminClient() as unknown as ApprovalsAdminClient);
   const { error } = await adminClient
     .from("profiles")
     .update({ admin_status: "approved" })
@@ -69,7 +69,7 @@ export async function rejectAdminAction(
 ): Promise<{ success: true }> {
   await assertCurrentUserIsAdmin();
 
-  const adminClient = deps.adminClient ?? createSupabaseAdminClient();
+  const adminClient: ApprovalsAdminClient = deps.adminClient ?? (createSupabaseAdminClient() as unknown as ApprovalsAdminClient);
   const { error } = await adminClient.auth.admin.deleteUser(adminId);
 
   if (error) throw new Error("No pudimos rechazar al administrador.");

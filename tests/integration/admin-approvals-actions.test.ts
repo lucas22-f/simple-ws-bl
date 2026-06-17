@@ -22,10 +22,9 @@ type MockOverrides = {
 
 /** Creates a thenable fluent-query mock: awaitable + .eq() returns self. */
 function createQueryMock<T>(response: T) {
-  const promise = Promise.resolve(response);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const query = Object.assign(promise, {
-    eq: vi.fn(() => query) as any,
+  const query: any = Object.assign(Promise.resolve(response), {
+    eq: vi.fn(() => query),
   });
   return query as Promise<T> & { eq: ReturnType<typeof vi.fn> };
 }
@@ -39,13 +38,13 @@ function createApprovalsMock(overrides: MockOverrides = {}) {
   );
   const selectQuery = createQueryMock({ data: pendingAdmins, error: null });
   const updateQuery = createQueryMock({ data: null, error: overrides.updateError ?? null });
-  const selectFn = vi.fn((_columns: string) => selectQuery);
-  const updateFn = vi.fn((_values: Record<string, unknown>) => updateQuery);
+  const selectFn = vi.fn(() => selectQuery);
+  const updateFn = vi.fn(() => updateQuery);
 
   return {
     adminClient: {
       auth: { admin: { deleteUser } },
-      from: vi.fn((_table: string) => ({
+      from: vi.fn(() => ({
         select: selectFn,
         update: updateFn,
       })),
