@@ -9,6 +9,13 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+vi.mock("@/server/categories/queries", () => ({
+  listActiveCategories: vi.fn().mockResolvedValue([
+    { id: "cat-mates", name: "Mates", slug: "mates", description: null, active: true, sortOrder: 1, createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z" },
+    { id: "cat-bombillas", name: "Bombillas", slug: "bombillas", description: null, active: true, sortOrder: 2, createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z" },
+  ]),
+}));
+
 import { AdminProductsView } from "@/app/admin/products/product-management";
 
 const actions = {
@@ -168,6 +175,33 @@ describe("AdminProductsView", () => {
 
     expect(html).toContain("Todavía no hay productos cargados");
     expect(html).toContain("/admin/products/new");
+  });
+
+  it("renders category dropdown when categories are provided", () => {
+    const categories = [
+      { id: "cat-1", name: "Mates", slug: "mates", description: null, active: true, sortOrder: 1, createdAt: "", updatedAt: "" },
+      { id: "cat-2", name: "Bombillas", slug: "bombillas", description: null, active: true, sortOrder: 2, createdAt: "", updatedAt: "" },
+    ];
+    const html = renderToStaticMarkup(createElement(AdminProductsView, { products, actions, categories }));
+
+    expect(html).toContain("Categoría (opcional)");
+    expect(html).toContain("Varios");
+    expect(html).toContain("Mates");
+    expect(html).toContain("Bombillas");
+    expect(html).toContain('value="cat-1"');
+    expect(html).toContain('value="cat-2"');
+  });
+
+  it("defaults dropdown to Varios when no category selected", () => {
+    const categories = [
+      { id: "cat-1", name: "Mates", slug: "mates", description: null, active: true, sortOrder: 1, createdAt: "", updatedAt: "" },
+    ];
+    const html = renderToStaticMarkup(createElement(AdminProductsView, { products, actions, categories }));
+
+    expect(html).toContain("Categoría (opcional)");
+    expect(html).toContain("Varios");
+    expect(html).toContain("Mates");
+    expect(html).toContain('value="cat-1"');
   });
 });
 
