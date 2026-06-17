@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getPublicEnv } from "@/server/env";
 import type { CategoryQueryClient, CategoryRow, Category } from "@/server/categories/types";
 
-export { type CategoryQueryClient } from "@/server/categories/types";
+export { type CategoryQueryClient, type CategoryRow } from "@/server/categories/types";
 
 export const CATEGORY_READ_ERROR_MESSAGE = "No pudimos cargar las categorías. Probá de nuevo en unos minutos.";
 
