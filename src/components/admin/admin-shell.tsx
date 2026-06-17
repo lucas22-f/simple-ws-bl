@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Home, LogOut, PackageSearch, ReceiptText, Settings, Store, Users } from "lucide-react";
+import { Home, LogOut, PackageSearch, ReceiptText, Settings, Store, Tags, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { FormLoadingOverlay } from "@/components/ui/loading-overlay";
 import { NavigationLink } from "@/components/ui/navigation-link";
@@ -21,6 +21,7 @@ const adminNavItems = [
   { href: "/admin", label: "Inicio", icon: Home },
   { href: "/admin/products", label: "Productos", icon: PackageSearch },
   { href: "/admin/orders", label: "Órdenes", icon: ReceiptText },
+  { href: "/admin/categories", label: "Categorías", icon: Tags },
   { href: "/admin/approvals", label: "Aprobaciones", icon: Users },
   { href: "/admin/settings", label: "Configuración", icon: Settings },
 ];
