@@ -45,3 +45,6 @@ output/
 
 # local scripts (not part of the app)
 scripts/generate-pdf.mjs
+
+# Local audit reports
+security-audit-*.md
