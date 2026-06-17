@@ -4,6 +4,7 @@ import { AdminProductsView } from "@/app/admin/products/product-management";
 import { actionError, actionSuccess, getErrorMessage, type FormActionState } from "@/lib/form-state";
 import { parsePageParam } from "@/lib/pagination";
 import { archiveProductAction, createProductAction, deleteProductAction, updateProductAction } from "@/server/admin/actions/products";
+import { listActiveCategories } from "@/server/categories/queries";
 import { listAdminProductsPage } from "@/server/products/queries";
 
 export const dynamic = "force-dynamic";
@@ -77,6 +78,9 @@ type AdminProductsPageProps = {
 export default async function AdminProductsPage({ searchParams }: AdminProductsPageProps) {
   const params = await searchParams;
   const { q } = params ?? {};
-  const { products, pagination } = await listAdminProductsPage({ page: parsePageParam(params?.page), pageSize: ADMIN_PRODUCTS_PAGE_SIZE, search: q });
-  return <AdminProductsView products={products} pagination={pagination} actions={pageActions} searchQuery={q ?? ""} />;
+  const [categories, { products, pagination }] = await Promise.all([
+    listActiveCategories(),
+    listAdminProductsPage({ page: parsePageParam(params?.page), pageSize: ADMIN_PRODUCTS_PAGE_SIZE, search: q }),
+  ]);
+  return <AdminProductsView products={products} pagination={pagination} actions={pageActions} searchQuery={q ?? ""} categories={categories} />;
 }

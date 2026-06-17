@@ -1,4 +1,4 @@
-import { ArrowRight, ClipboardCheck, PackageSearch, ReceiptText, Settings, Store } from "lucide-react";
+import { ArrowRight, ClipboardCheck, PackageSearch, ReceiptText, Settings, Store, Tags } from "lucide-react";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { NavigationLink } from "@/components/ui/navigation-link";
 
@@ -26,6 +26,14 @@ const quickActions = [
     icon: Settings,
     pendingTitle: "Cargando configuración",
     pendingDescription: "Abrimos las reglas operativas de la tienda.",
+  },
+  {
+    href: "/admin/categories",
+    label: "Categorías",
+    description: "Creá, editá y organizá las categorías de productos.",
+    icon: Tags,
+    pendingTitle: "Cargando categorías",
+    pendingDescription: "Abrimos la gestión de categorías.",
   },
 ];
 

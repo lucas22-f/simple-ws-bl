@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { CatalogView } from "@/components/store/catalog-view";
+import type { Category } from "@/server/categories/types";
 import type { StorefrontProduct } from "@/server/products/queries";
 
 const products: StorefrontProduct[] = [
@@ -130,6 +131,71 @@ describe("CatalogView", () => {
 
     expect(html.match(/No pudimos cargar el catálogo\./g)).toHaveLength(1);
     expect(html.match(/Probá de nuevo en unos minutos\./g)).toHaveLength(1);
+  });
+
+  const categories: Category[] = [
+    {
+      id: "cat-mates",
+      name: "Mates",
+      slug: "mates",
+      description: null,
+      active: true,
+      sortOrder: 1,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    },
+    {
+      id: "cat-cocina",
+      name: "Cocina",
+      slug: "cocina",
+      description: null,
+      active: true,
+      sortOrder: 2,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    },
+  ];
+
+  it("renders all categories filter options", () => {
+    const html = renderToStaticMarkup(
+      createElement(CatalogView, {
+        catalog: { status: "ready", products },
+        categories,
+      }),
+    );
+
+    expect(html).toContain("Todas las categorías");
+    expect(html).toContain('value="mates"');
+    expect(html).toContain("Mates");
+    expect(html).toContain('value="cocina"');
+    expect(html).toContain("Cocina");
+  });
+
+  it("preselects current category from categorySlug prop", () => {
+    const html = renderToStaticMarkup(
+      createElement(CatalogView, {
+        catalog: { status: "ready", products },
+        categories,
+        categorySlug: "mates",
+      }),
+    );
+
+    expect(html).toContain('value="mates" selected');
+    expect(html).not.toContain('value="cocina" selected');
+  });
+
+  it("shows Todas las categorias as first option", () => {
+    const html = renderToStaticMarkup(
+      createElement(CatalogView, {
+        catalog: { status: "ready", products },
+        categories,
+      }),
+    );
+
+    const todasIndex = html.indexOf("Todas las categorías");
+    const matesIndex = html.indexOf('value="mates"');
+    expect(todasIndex).toBeGreaterThan(0);
+    expect(matesIndex).toBeGreaterThan(todasIndex);
   });
 
   it("keeps touched catalog storefront files free of forbidden neutral color families", () => {

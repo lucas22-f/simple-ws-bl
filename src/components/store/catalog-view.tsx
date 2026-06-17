@@ -2,6 +2,7 @@ import * as React from "react";
 import { ArrowRight, PackageSearch, Search, ShoppingBag } from "lucide-react";
 import { formatMoney } from "@/lib/money";
 import type { getProductListState } from "@/server/products/queries";
+import type { Category } from "@/server/categories/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NavigationLink } from "@/components/ui/navigation-link";
@@ -12,11 +13,12 @@ type CatalogState = Awaited<ReturnType<typeof getProductListState>>;
 
 type CatalogViewProps = {
   catalog: CatalogState;
+  categories?: Category[];
   searchQuery?: string;
   categorySlug?: string;
 };
 
-export function CatalogView({ catalog, searchQuery = "", categorySlug }: CatalogViewProps) {
+export function CatalogView({ catalog, categories, searchQuery = "", categorySlug }: CatalogViewProps) {
   const products = catalog.products;
   const hasSearch = searchQuery.trim().length > 0;
 
@@ -42,7 +44,7 @@ export function CatalogView({ catalog, searchQuery = "", categorySlug }: Catalog
             </p>
           </div>
 
-          <form className="grid gap-3 border-t border-border bg-card p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:p-6" action="/catalog">
+          <form className="grid gap-3 border-t border-border bg-card p-5 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:p-6" action="/catalog">
             <label className="sr-only" htmlFor="catalog-search">
               Buscar productos
             </label>
@@ -56,6 +58,26 @@ export function CatalogView({ catalog, searchQuery = "", categorySlug }: Catalog
                 className="min-h-12 pl-11"
               />
             </div>
+            {categories ? (
+              <>
+                <label className="sr-only" htmlFor="catalog-category">
+                  Filtrar por categoría
+                </label>
+                <select
+                  id="catalog-category"
+                  name="category"
+                  defaultValue={categorySlug ?? ""}
+                  className="min-h-12 rounded-xl border border-border bg-card px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="">Todas las categorías</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.slug}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </>
+            ) : null}
             <SubmitButton className="button-lift min-h-12 rounded-xl px-6" pendingLabel="Buscando...">
               Buscar productos
             </SubmitButton>
