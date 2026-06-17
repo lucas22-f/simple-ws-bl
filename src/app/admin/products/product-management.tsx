@@ -15,6 +15,7 @@ import { initialFormActionState, type FormActionState } from "@/lib/form-state";
 import { PRODUCT_IMAGE_ACCEPT_ATTRIBUTE, compressProductImage, formatFileSize, getProductImageCompressionErrorMessage } from "@/lib/image-compression";
 import { calculatePublishedPriceCents, formatCentsAsCurrency, MERCADO_PAGO_SURCHARGE_PERCENT, parseCurrencyAmountToCents } from "@/lib/money";
 import type { PaginationState } from "@/lib/pagination";
+import type { Category } from "@/server/categories/types";
 import type { AdminProduct } from "@/server/products/queries";
 
 export type ProductFormAction = string | ((state: FormActionState, formData: FormData) => Promise<FormActionState>);
@@ -23,6 +24,7 @@ type AdminProductsViewProps = {
   products: AdminProduct[];
   pagination?: PaginationState;
   searchQuery?: string;
+  categories?: Category[];
   actions: {
     create: ProductFormAction;
     update: ProductFormAction;
@@ -146,7 +148,7 @@ function ProductPricePreview({ basePriceAmount, applySurcharge, currency }: { ba
   );
 }
 
-function ProductFields({ product }: { product?: AdminProduct }) {
+function ProductFields({ product, categories }: { product?: AdminProduct; categories?: Category[] }) {
   const [basePriceAmount, setBasePriceAmount] = React.useState(getPriceInputValue(product));
   const [applySurcharge, setApplySurcharge] = React.useState(product?.applyMercadoPagoSurcharge ?? false);
   const currency = product?.currency ?? "ARS";
@@ -185,6 +187,17 @@ function ProductFields({ product }: { product?: AdminProduct }) {
         Descripción
         <textarea className={`${fieldClassName} min-h-16 resize-y`} name="description" placeholder="Descripción" defaultValue={product?.description} />
       </label>
+      {categories ? (
+        <label className="grid gap-1 text-sm font-medium">
+          Categoría (opcional)
+          <select className={compactFieldClassName} name="categoryId" defaultValue="">
+            <option value="">Varios</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+        </label>
+      ) : null}
       <div className="col-span-2 flex items-center gap-3">
         <label className="flex items-center gap-2 text-sm">
           <input name="active" type="checkbox" value="true" defaultChecked={product?.active ?? false} /> Publicado
@@ -212,7 +225,7 @@ function ProductFields({ product }: { product?: AdminProduct }) {
   );
 }
 
-export function ProductCreateForm({ action }: { action: ProductFormAction }) {
+export function ProductCreateForm({ action, categories }: { action: ProductFormAction; categories?: Category[] }) {
   const { state, formAction } = useProductFormAction(action);
   const [imageStatus, setImageStatus] = React.useState<{ message: string; tone?: "neutral" | "error" | "success" }>();
   const createAction = typeof formAction === "function"
@@ -240,7 +253,7 @@ export function ProductCreateForm({ action }: { action: ProductFormAction }) {
     <form action={createAction} className="relative mt-1 grid grid-cols-2 gap-x-4 gap-y-3 overflow-hidden lg:grid-cols-3">
       <FormToast state={state} successTitle="Producto guardado" />
       <FormLoadingOverlay title="Guardando producto" description="Optimizamos la imagen, creamos el producto y actualizamos el catálogo." />
-      <ProductFields />
+      <ProductFields categories={categories} />
       <ProductImageField status={imageStatus?.message} tone={imageStatus?.tone} />
       <SubmitButton className="button-lift min-h-11 sm:col-span-2 lg:col-span-3" pendingLabel="Guardando producto...">
         <PackagePlus className="h-4 w-4" aria-hidden="true" />
@@ -249,14 +262,14 @@ export function ProductCreateForm({ action }: { action: ProductFormAction }) {
     </form>
   );
 }
-function ProductUpdateForm({ product, action }: { product: AdminProduct; action: ProductFormAction }) {
+function ProductUpdateForm({ product, action, categories }: { product: AdminProduct; action: ProductFormAction; categories?: Category[] }) {
   const { state, formAction } = useProductFormAction(action);
   return (
     <form action={formAction} className="relative mt-5 grid gap-3 overflow-hidden sm:grid-cols-2">
       <FormToast state={state} successTitle="Producto actualizado" />
       <FormLoadingOverlay title="Actualizando producto" description="Guardamos los cambios de este producto." />
       <input name="productId" type="hidden" value={product.id} />
-      <ProductFields product={product} />
+      <ProductFields product={product} categories={categories} />
       <SubmitButton className="button-lift min-h-11 sm:col-span-2" pendingLabel="Actualizando producto...">
         <PencilLine className="h-4 w-4" aria-hidden="true" />
         Actualizar producto
@@ -304,7 +317,7 @@ function ProductDeleteForm({ product, action }: { product: AdminProduct; action:
   );
 }
 
-function ProductEditDialog({ product, actions }: { product: AdminProduct; actions: AdminProductsViewProps["actions"] }) {
+function ProductEditDialog({ product, actions, categories }: { product: AdminProduct; actions: AdminProductsViewProps["actions"]; categories?: Category[] }) {
   const dialogRef = React.useRef<HTMLDialogElement>(null);
 
   return (
@@ -328,7 +341,7 @@ function ProductEditDialog({ product, actions }: { product: AdminProduct; action
           </Button>
         </div>
         <div className="p-5 sm:p-6">
-          <ProductUpdateForm product={product} action={actions.update} />
+          <ProductUpdateForm product={product} action={actions.update} categories={categories} />
           <ProductArchiveForm product={product} action={actions.archive} />
           <ProductDeleteForm product={product} action={actions.delete} />
         </div>
@@ -337,7 +350,7 @@ function ProductEditDialog({ product, actions }: { product: AdminProduct; action
   );
 }
 
-export function AdminProductsView({ products, pagination, actions, searchQuery = "" }: AdminProductsViewProps) {
+export function AdminProductsView({ products, pagination, actions, searchQuery = "", categories }: AdminProductsViewProps) {
   const publishedProducts = products.filter((product) => product.active).length;
   const featuredProducts = products.filter((product) => product.featured).length;
   const trackedStock = products.reduce((total, product) => total + (product.stockQuantity ?? 0), 0);
@@ -447,7 +460,7 @@ export function AdminProductsView({ products, pagination, actions, searchQuery =
                         ) : null}
                       </div>
                       <div className="mt-4 border-t pt-4">
-                        <ProductEditDialog product={product} actions={actions} />
+                        <ProductEditDialog product={product} actions={actions} categories={categories} />
                       </div>
                     </div>
                   </article>

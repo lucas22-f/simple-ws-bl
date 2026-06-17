@@ -4,6 +4,7 @@ import { AdminShell } from "@/components/admin/admin-shell";
 import { actionError, actionSuccess, getErrorMessage, type FormActionState } from "@/lib/form-state";
 import { ProductCreateForm } from "@/app/admin/products/product-management";
 import { createProductAction } from "@/server/admin/actions/products";
+import { listActiveCategories } from "@/server/categories/queries";
 import { NavigationLink } from "@/components/ui";
 import { ArrowLeft } from "lucide-react";
 
@@ -25,6 +26,7 @@ async function saveProduct(_state: FormActionState, formData: FormData): Promise
 }
 
 export default async function AdminProductNewPage() {
+  const categories = await listActiveCategories();
   return (
     <AdminShell title="Crear producto" description="Carga la informacion esencial del producto desde una pantalla dedicada, sin mezclar alta y gestion del inventario." hideHeader={true}>
 
@@ -45,7 +47,7 @@ export default async function AdminProductNewPage() {
             <p className="mt-1 text-sm leading-6 text-muted-foreground">Agrega un nuevo producto</p>
           </div>
         </div>
-        <ProductCreateForm action={saveProduct} />
+        <ProductCreateForm action={saveProduct} categories={categories} />
       </section>
     </AdminShell>
   );

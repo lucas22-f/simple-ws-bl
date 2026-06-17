@@ -5,6 +5,7 @@ import { calculatePublishedPriceCents, parseCurrencyAmountToCents } from "@/lib/
 import { assertAdminActionAccess, type AdminActionAuthOptions } from "@/server/admin/actions/auth";
 import { buildProductImagePath, PRODUCT_IMAGE_ALLOWED_TYPES, PRODUCT_IMAGE_MAX_BYTES, PRODUCT_IMAGES_BUCKET } from "@/server/admin/storage";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
+import { getVariosCategoryId } from "@/server/categories/queries";
 
 const optionalUuidSchema = z.union([z.string().uuid(), z.literal("")]).optional().transform((value) => value || null);
 
@@ -224,6 +225,9 @@ export async function createProductAction(rawInput: unknown, options: ProductAct
   await assertAdminActionAccess(options);
   const repository = options.repository ?? createSupabaseProductsRepository();
   const product = parseProduct(rawInput);
+  if (!product.categoryId) {
+    product.categoryId = await getVariosCategoryId();
+  }
   const image = parseProductImage(rawInput, product.name);
   const createdProduct = await repository.createProduct(product);
 

@@ -12,6 +12,12 @@ const supabaseAdmin = vi.hoisted(() => ({
 
 vi.mock("@/server/supabase/admin", () => supabaseAdmin);
 
+const mockGetVariosCategoryId = vi.hoisted(() => vi.fn().mockResolvedValue("varios-cat-id-0000"));
+
+vi.mock("@/server/categories/queries", () => ({
+  getVariosCategoryId: mockGetVariosCategoryId,
+}));
+
 import { archiveProductAction, createProductAction, createSupabaseProductsRepository, deleteProductAction, updateProductAction } from "@/server/admin/actions/products";
 import { archiveOrderAction, updateOrderFulfillmentStatusAction, type OrdersRepository } from "@/server/admin/actions/orders";
 import { updateSettingsAction } from "@/server/admin/actions/settings";
@@ -224,6 +230,39 @@ describe("admin product actions", () => {
 
     expect(repository.hasUnsafeDeleteReferences).not.toHaveBeenCalled();
     expect(repository.deleteProduct).not.toHaveBeenCalled();
+  });
+
+  it("auto-assigns Varios category when no categoryId is provided on create", async () => {
+    const repository = { createProduct: vi.fn(async (product) => ({ id: "prod-1", ...product })) };
+
+    await createProductAction({
+      name: "Mate",
+      slug: "mate",
+      description: "",
+      basePriceAmount: "10.00",
+      active: "true",
+    }, { repository, assertAdmin: allowAdmin });
+
+    expect(repository.createProduct).toHaveBeenCalledWith(expect.objectContaining({
+      categoryId: "varios-cat-id-0000",
+    }));
+  });
+
+  it("preserves explicit categoryId on create", async () => {
+    const repository = { createProduct: vi.fn(async (product) => ({ id: "prod-1", ...product })) };
+
+    await createProductAction({
+      name: "Mate premium",
+      slug: "mate-premium",
+      description: "",
+      basePriceAmount: "15.00",
+      categoryId: "550e8400-e29b-41d4-a716-446655440099",
+      active: "true",
+    }, { repository, assertAdmin: allowAdmin });
+
+    expect(repository.createProduct).toHaveBeenCalledWith(expect.objectContaining({
+      categoryId: "550e8400-e29b-41d4-a716-446655440099",
+    }));
   });
 });
 
