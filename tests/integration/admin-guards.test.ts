@@ -20,6 +20,36 @@ describe("admin route guards", () => {
     expect(canAccessAdmin(null)).toBe(false);
   });
 
+  it("blocks pending admin on protected routes with reason 'pending'", () => {
+    const pendingAdmin: AuthProfile = { id: "pending-id", role: "admin", admin_status: "pending" };
+
+    expect(resolveAdminAccess(pendingAdmin, "https://bazar.test/admin/products")).toEqual({
+      allowed: false,
+      redirectTo: "https://bazar.test/admin/login?next=%2Fadmin%2Fproducts",
+      reason: "pending",
+    });
+  });
+
+  it("allows pending admin on public auth routes", () => {
+    const pendingAdmin: AuthProfile = { id: "pending-id", role: "admin", admin_status: "pending" };
+
+    expect(resolveAdminAccess(pendingAdmin, "https://bazar.test/admin/login")).toEqual({
+      allowed: true,
+    });
+
+    expect(resolveAdminAccess(pendingAdmin, "https://bazar.test/admin/register")).toEqual({
+      allowed: true,
+    });
+  });
+
+  it("allows approved admin on protected routes", () => {
+    const approvedAdmin: AuthProfile = { id: "approved-id", role: "admin", admin_status: "approved" };
+
+    expect(resolveAdminAccess(approvedAdmin, "https://bazar.test/admin/settings")).toEqual({
+      allowed: true,
+    });
+  });
+
   it("redirects anonymous and non-admin profiles to login with a safe next path", () => {
     expect(resolveAdminAccess(null, "https://bazar.test/admin/products")).toEqual({
       allowed: false,

@@ -17,7 +17,7 @@ async function readCurrentProfile(supabase: AdminAuthClient): Promise<AuthProfil
 
   if (!user) return null;
 
-  const { data } = await supabase.from("profiles").select("id, role").eq("id", user.id).maybeSingle();
+  const { data } = await supabase.from("profiles").select("id, role, admin_status").eq("id", user.id).maybeSingle();
   return data as AuthProfile;
 }
 
@@ -25,7 +25,7 @@ export async function assertCurrentUserIsAdmin(supabase?: AdminAuthClient) {
   const authClient = supabase ?? await createSupabaseServerClient();
   const profile = await readCurrentProfile(authClient);
 
-  if (!canAccessAdmin(profile)) {
+  if (!canAccessAdmin(profile) || profile?.admin_status === "pending") {
     throw new Error("No autorizado");
   }
 }
