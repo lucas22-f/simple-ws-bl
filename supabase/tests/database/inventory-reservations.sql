@@ -1,6 +1,6 @@
 begin;
 
-select plan(28);
+select plan(36);
 
 select has_type('public', 'order_inventory_status', 'order inventory status enum exists');
 
@@ -15,6 +15,33 @@ select ok(
     'EXECUTE'
   ),
   'service_role can execute inventory-aware pending orders'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.release_orphaned_inventory_reservations(timestamp with time zone)',
+    'EXECUTE'
+  ),
+  'service_role can execute orphaned reservation cleanup'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.release_orphaned_inventory_reservations(timestamp with time zone)',
+    'EXECUTE'
+  ),
+  'anon cannot execute orphaned reservation cleanup'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.release_orphaned_inventory_reservations(timestamp with time zone)',
+    'EXECUTE'
+  ),
+  'authenticated cannot execute orphaned reservation cleanup'
 );
 
 insert into public.products (
@@ -47,6 +74,16 @@ values
     'ARS',
     true,
     2
+  ),
+  (
+    '30000000-0000-0000-0000-000000000003',
+    'Inventory Cleanup',
+    'inventory-cleanup',
+    'Inventory cleanup test product',
+    700,
+    'ARS',
+    true,
+    5
   );
 
 set local role service_role;
@@ -379,6 +416,89 @@ select is(
   (select stock_quantity from public.products where id = '30000000-0000-0000-0000-000000000002'),
   2,
   'late payment conflict does not make stock negative'
+);
+
+set local role service_role;
+
+create temporary table orphan_order as
+select *
+from public.create_pending_order(
+  '{
+    "buyer_name": "Orphan Buyer",
+    "buyer_email": "orphan@example.com",
+    "buyer_phone": null,
+    "shipping_address": {},
+    "subtotal_cents": 0,
+    "shipping_cents": 0,
+    "commission_cents": 0,
+    "total_cents": 0,
+    "currency": "ARS",
+    "external_reference": "inventory-orphan"
+  }'::jsonb,
+  '[{"product_id":"30000000-0000-0000-0000-000000000003","quantity":2}]'::jsonb
+);
+
+update public.orders
+set reservation_expires_at = now() - interval '1 minute'
+where id = (select id from orphan_order);
+
+create temporary table preference_order as
+select *
+from public.create_pending_order(
+  '{
+    "buyer_name": "Preference Buyer",
+    "buyer_email": "preference@example.com",
+    "buyer_phone": null,
+    "shipping_address": {},
+    "subtotal_cents": 0,
+    "shipping_cents": 0,
+    "commission_cents": 0,
+    "total_cents": 0,
+    "currency": "ARS",
+    "external_reference": "inventory-preference"
+  }'::jsonb,
+  '[{"product_id":"30000000-0000-0000-0000-000000000003","quantity":1}]'::jsonb
+);
+
+update public.orders
+set mercado_pago_preference_id = 'pref-existing',
+    reservation_expires_at = now() - interval '1 minute'
+where id = (select id from preference_order);
+
+create temporary table orphan_release_result as
+select *
+from public.release_orphaned_inventory_reservations(now());
+
+reset role;
+
+select is(
+  (select count(*)::integer from orphan_release_result),
+  1,
+  'orphaned reservation cleanup releases only orders without a preference id'
+);
+
+select is(
+  (select order_id from orphan_release_result),
+  (select id from orphan_order),
+  'orphaned reservation cleanup returns the released order id'
+);
+
+select is(
+  (select inventory_status::text from public.orders where id = (select id from orphan_order)),
+  'released',
+  'orphaned reservation cleanup marks the expired orphan as released'
+);
+
+select is(
+  (select inventory_status::text from public.orders where id = (select id from preference_order)),
+  'reserved',
+  'orphaned reservation cleanup does not release orders that already have a preference id'
+);
+
+select is(
+  (select stock_quantity from public.products where id = '30000000-0000-0000-0000-000000000003'),
+  4,
+  'orphaned reservation cleanup restores only the orphaned reservation stock'
 );
 
 select * from finish();

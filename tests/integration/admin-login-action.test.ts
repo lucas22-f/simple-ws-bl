@@ -7,8 +7,9 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-import { executeAdminLogin } from "@/server/admin/actions/login";
+import { executeAdminLogin, loginAction } from "@/server/admin/actions/login";
 import { resolveAdminLoginNextPath } from "@/server/admin/actions/login-path";
+import type { RateLimiter } from "@/server/security/rate-limit";
 
 function buildLoginForm(input: { email?: string; password?: string; next?: string }) {
   const formData = new FormData();
@@ -48,6 +49,17 @@ function createLoginClients(options: {
   };
 }
 
+function createAllowingRateLimiter(): RateLimiter {
+  return {
+    consume: vi.fn(async () => ({
+      allowed: true,
+      retryAfterSeconds: 0,
+      remaining: 4,
+      resetAt: new Date("2026-06-05T12:00:00.000Z"),
+    })),
+  };
+}
+
 describe("admin login next path resolution", () => {
   it("keeps same-site admin destinations", () => {
     expect(resolveAdminLoginNextPath("/admin/products?tab=active")).toBe("/admin/products?tab=active");
@@ -76,6 +88,8 @@ describe("admin login action", () => {
     }), {
       redirect: redirectTo,
       supabase: clients.supabase,
+      rateLimiter: createAllowingRateLimiter(),
+      clientIp: "203.0.113.20",
     })).rejects.toThrow("redirect:/admin/orders");
 
     expect(clients.signInWithPassword).toHaveBeenCalledWith({
@@ -100,6 +114,8 @@ describe("admin login action", () => {
     }), {
       redirect: redirectTo,
       supabase: clients.supabase,
+      rateLimiter: createAllowingRateLimiter(),
+      clientIp: "203.0.113.20",
     })).rejects.toThrow("redirect:/admin");
 
     expect(redirectTo).toHaveBeenCalledWith("/admin");
@@ -118,6 +134,8 @@ describe("admin login action", () => {
     }), {
       redirect: redirectTo,
       supabase: clients.supabase,
+      rateLimiter: createAllowingRateLimiter(),
+      clientIp: "203.0.113.20",
     })).rejects.toThrow("Credenciales inválidas");
 
     expect(redirectTo).not.toHaveBeenCalled();
@@ -136,6 +154,8 @@ describe("admin login action", () => {
     }), {
       redirect: redirectTo,
       supabase: clients.supabase,
+      rateLimiter: createAllowingRateLimiter(),
+      clientIp: "203.0.113.20",
     })).rejects.toThrow("Tu cuenta está pendiente de aprobación. Contactá al administrador que te dio las credenciales.");
 
     expect(clients.signInWithPassword).toHaveBeenCalled();
@@ -156,11 +176,105 @@ describe("admin login action", () => {
     }), {
       redirect: redirectTo,
       supabase: clients.supabase,
+      rateLimiter: createAllowingRateLimiter(),
+      clientIp: "203.0.113.20",
     })).rejects.toThrow("redirect:/admin/products");
 
     expect(clients.signInWithPassword).toHaveBeenCalled();
     expect(clients.from).toHaveBeenCalledWith("profiles");
     expect(clients.maybeSingle).toHaveBeenCalled();
     expect(redirectTo).toHaveBeenCalledWith("/admin/products");
+  });
+
+  it("checks admin login rate limits by IP and email before authenticating", async () => {
+    const clients = createLoginClients({ adminStatus: "approved" });
+    const rateLimiter = createAllowingRateLimiter();
+    const redirectTo = vi.fn((path: string): never => {
+      throw new Error(`redirect:${path}`);
+    });
+
+    await expect(executeAdminLogin(buildLoginForm({
+      email: " Admin@Example.COM ",
+      password: "secret",
+      next: "/admin/products",
+    }), {
+      redirect: redirectTo,
+      supabase: clients.supabase,
+      rateLimiter,
+      clientIp: "203.0.113.20",
+    })).rejects.toThrow("redirect:/admin/products");
+
+    expect(rateLimiter.consume).toHaveBeenCalledWith(expect.objectContaining({
+      bucket: "admin-login:ip",
+      identity: "203.0.113.20",
+    }));
+    expect(rateLimiter.consume).toHaveBeenCalledWith(expect.objectContaining({
+      bucket: "admin-login:email",
+      identity: "admin@example.com",
+    }));
+    expect(clients.signInWithPassword).toHaveBeenCalledWith({
+      email: "Admin@Example.COM",
+      password: "secret",
+    });
+  });
+
+  it("stops before Supabase auth when the admin login limit is exceeded", async () => {
+    const clients = createLoginClients({ adminStatus: "approved" });
+    const rateLimiter: RateLimiter = {
+      consume: vi.fn(async () => ({
+        allowed: false,
+        retryAfterSeconds: 120,
+        remaining: 0,
+        resetAt: new Date("2026-06-05T12:02:00.000Z"),
+      })),
+    };
+    const redirectTo = vi.fn((path: string): never => {
+      throw new Error(`redirect:${path}`);
+    });
+
+    await expect(executeAdminLogin(buildLoginForm({
+      email: "admin@example.com",
+      password: "secret",
+      next: "/admin/products",
+    }), {
+      redirect: redirectTo,
+      supabase: clients.supabase,
+      rateLimiter,
+      clientIp: "203.0.113.20",
+    })).rejects.toThrow("Demasiados intentos. Probá de nuevo en unos minutos.");
+
+    expect(clients.signInWithPassword).not.toHaveBeenCalled();
+    expect(redirectTo).not.toHaveBeenCalled();
+  });
+
+  it("maps a rate-limited admin login action to a form error", async () => {
+    const rateLimiter: RateLimiter = {
+      consume: vi.fn(async () => ({
+        allowed: false,
+        retryAfterSeconds: 120,
+        remaining: 0,
+        resetAt: new Date("2026-06-05T12:02:00.000Z"),
+      })),
+    };
+
+    await expect(loginAction(
+      { status: "idle" },
+      buildLoginForm({
+        email: "admin@example.com",
+        password: "secret",
+        next: "/admin/products",
+      }),
+      {
+        rateLimiter,
+        clientIp: "203.0.113.20",
+      },
+    )).resolves.toEqual({
+      status: "error",
+      message: "Demasiados intentos. Probá de nuevo en unos minutos.",
+      fieldErrors: {
+        email: " ",
+        password: " ",
+      },
+    });
   });
 });

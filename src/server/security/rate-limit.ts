@@ -44,6 +44,18 @@ export const CHECKOUT_RATE_LIMIT = {
   windowSeconds: 60,
 } as const;
 
+export const CHECKOUT_EMAIL_RATE_LIMIT = {
+  bucket: "checkout:create-preference:email",
+  limit: 3,
+  windowSeconds: 60 * 10,
+} as const;
+
+export const PAYMENT_RETURN_RATE_LIMIT = {
+  bucket: "orders:payment-return:ip",
+  limit: 20,
+  windowSeconds: 60,
+} as const;
+
 export const ADMIN_REGISTRATION_IP_RATE_LIMIT = {
   bucket: "admin-registration:ip",
   limit: 5,
@@ -54,6 +66,18 @@ export const ADMIN_REGISTRATION_EMAIL_RATE_LIMIT = {
   bucket: "admin-registration:email",
   limit: 3,
   windowSeconds: 60 * 60,
+} as const;
+
+export const ADMIN_LOGIN_IP_RATE_LIMIT = {
+  bucket: "admin-login:ip",
+  limit: 10,
+  windowSeconds: 60 * 15,
+} as const;
+
+export const ADMIN_LOGIN_EMAIL_RATE_LIMIT = {
+  bucket: "admin-login:email",
+  limit: 5,
+  windowSeconds: 60 * 15,
 } as const;
 
 export function normalizeRateLimitIdentity(value: string) {

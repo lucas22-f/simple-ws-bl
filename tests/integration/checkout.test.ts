@@ -80,7 +80,13 @@ function createSupabaseMock() {
     if (table === "order_items") return { insert: orderItemsInsert };
     throw new Error(`Unexpected table ${table}`);
   });
-  const rpc = vi.fn(async () => ({ data: { id: "order-1", external_reference: "order-ext-default" }, error: null }));
+  const rpc = vi.fn(async (functionName: string) => {
+    if (functionName === "release_orphaned_inventory_reservations") {
+      return { data: [], error: null };
+    }
+
+    return { data: { id: "order-1", external_reference: "order-ext-default" }, error: null };
+  });
   return { from, rpc, ordersInsert, orderItemsInsert, updatePreferenceQuery };
 }
 
@@ -258,11 +264,30 @@ describe("Mercado Pago preference creation", () => {
           failure: "https://bazar.test/payment/failure?order_id=order-1",
           pending: "https://bazar.test/payment/pending?order_id=order-1",
         },
+        notificationUrl: "https://bazar.test/api/mercado-pago/webhook",
       }),
     );
-    expect(gateway.createPreference).not.toHaveBeenCalledWith(
-      expect.objectContaining({ notificationUrl: expect.anything() }),
-    );
+  });
+
+  it("releases expired orphaned reservations before calculating checkout availability", async () => {
+    const repository = createRepository();
+    const releaseOrphanedReservations = vi.fn(async () => undefined);
+    const getActiveProductsByIds = vi.spyOn(repository, "getActiveProductsByIds");
+
+    await expect(createCheckoutOrder(
+      {
+        buyer: validBuyer,
+        items: [{ productId: "prod-1", quantity: 1 }],
+      },
+      {
+        repository: {
+          ...repository,
+          releaseOrphanedReservations,
+        },
+      },
+    )).resolves.toMatchObject({ orderId: "order-1" });
+
+    expect(releaseOrphanedReservations.mock.invocationCallOrder[0]).toBeLessThan(getActiveProductsByIds.mock.invocationCallOrder[0]);
   });
 
   it("persists the Mercado Pago preference ID when using the default production repository", async () => {
@@ -279,6 +304,7 @@ describe("Mercado Pago preference creation", () => {
 
     expect(supabase.updatePreferenceQuery.update).toHaveBeenCalledWith({ mercado_pago_preference_id: "pref-default" });
     expect(supabase.updatePreferenceQuery.eq).toHaveBeenCalledWith("id", "order-1");
+    expect(supabase.rpc).toHaveBeenCalledWith("release_orphaned_inventory_reservations", {});
   });
 });
 

@@ -46,7 +46,12 @@ describe("Mercado Pago webhook", () => {
 
     const result = await handleMercadoPagoWebhook(
       {
-        body: { type: "payment", data: { id: "pay-1" } },
+        body: {
+          type: "payment",
+          data: { id: "pay-1" },
+          payer: { email: "buyer@example.com", phone: "11111111" },
+          metadata: { address: "Av. Siempre Viva 742" },
+        },
         query: { "data.id": "pay-1", type: "payment" },
         headers: { "x-request-id": "req-1", "x-signature": "ts=1700000000,v1=bad" },
       },
@@ -119,6 +124,9 @@ describe("Mercado Pago webhook", () => {
       currency: "ARS",
       paymentStatus: "paid",
     });
+    const persistedEvent = vi.mocked(store.reconcileMercadoPagoPayment).mock.calls[0][0];
+    expect(JSON.stringify(persistedEvent.payload)).not.toContain("buyer@example.com");
+    expect(JSON.stringify(persistedEvent.payload)).not.toContain("Av. Siempre Viva");
   });
 
   it("handles duplicate webhook events idempotently without duplicate reconciliation", async () => {

@@ -65,6 +65,13 @@ export function createSupabaseCheckoutRepository(): CheckoutRepository {
   const supabase = createSupabaseAdminClient();
 
   return {
+    async releaseOrphanedReservations() {
+      const { error } = await supabase.rpc("release_orphaned_inventory_reservations", {});
+
+      if (error) {
+        throw new Error("No pudimos liberar reservas vencidas");
+      }
+    },
     async getActiveProductsByIds(productIds) {
       const { data, error } = await supabase
         .from("products")
@@ -148,6 +155,7 @@ export async function createCheckoutOrder(
 ) {
   const input = checkoutInputSchema.parse(rawInput) as CheckoutInput;
   const repository = options.repository ?? createSupabaseCheckoutRepository();
+  await repository.releaseOrphanedReservations?.();
   const calculated = await calculateCheckout(input, repository);
   const externalReference = options.externalReferenceFactory?.() ?? randomUUID();
   const orderInput: PendingOrderInput = {

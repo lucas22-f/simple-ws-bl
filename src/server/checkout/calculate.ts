@@ -65,6 +65,7 @@ export type PendingOrderResult = {
 };
 
 export type CheckoutRepository = {
+  releaseOrphanedReservations?: () => Promise<void>;
   getActiveProductsByIds: (productIds: string[]) => Promise<CheckoutProduct[]>;
   getCheckoutSettings: () => Promise<CheckoutSettings>;
   createPendingOrder: (order: PendingOrderInput) => Promise<PendingOrderResult>;

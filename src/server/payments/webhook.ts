@@ -1,7 +1,7 @@
 ﻿import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
-import { createMercadoPagoPaymentGateway, type MercadoPagoPaymentGateway } from "@/server/payments/mercado-pago";
+import { createMercadoPagoPaymentGateway, type MercadoPagoPayment, type MercadoPagoPaymentGateway } from "@/server/payments/mercado-pago";
 
 export type PaymentStatus = "pending" | "paid" | "rejected" | "cancelled" | "refunded";
 
@@ -119,6 +119,37 @@ function eventType(request: WebhookRequest) {
   return record.type ?? record.action ?? "payment";
 }
 
+function compactObject<T extends Record<string, unknown>>(value: T) {
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined));
+}
+
+function summarizeWebhookBody(body: unknown) {
+  const record = typeof body === "object" && body !== null ? body as MercadoPagoWebhookBody : {};
+  return compactObject({
+    type: record.type,
+    action: record.action,
+    data: record.data?.id === undefined ? undefined : { id: String(record.data.id) },
+  });
+}
+
+function summarizeWebhookQuery(query: WebhookRequest["query"]) {
+  return compactObject({
+    "data.id": readQueryParam(query, "data.id"),
+    type: readQueryParam(query, "type"),
+  });
+}
+
+function createPaymentEventPayload(input: {
+  request: WebhookRequest;
+  payment: MercadoPagoPayment;
+}) {
+  return {
+    webhook: summarizeWebhookBody(input.request.body),
+    query: summarizeWebhookQuery(input.request.query),
+    payment: input.payment,
+  };
+}
+
 export function mapMercadoPagoStatus(status: string): PaymentStatus {
   if (status === "approved") {
     return "paid";
@@ -218,7 +249,7 @@ export async function handleMercadoPagoWebhook(
   const reconciliation = await store.reconcileMercadoPagoPayment({
     providerEventId,
     eventType: eventType(request),
-    payload: { webhook: request.body, query: request.query, payment },
+    payload: createPaymentEventPayload({ request, payment }),
     externalReference: payment.externalReference,
     mercadoPagoPaymentId: payment.id,
     preferenceId: payment.preferenceId,

@@ -23,6 +23,7 @@ export async function createCheckoutPreference(
     externalReferenceFactory: options.externalReferenceFactory,
   });
   const siteUrl = normalizeSiteUrl(options.siteUrl ?? getPublicEnv().NEXT_PUBLIC_SITE_URL);
+  const notificationUrl = `${siteUrl}/api/mercado-pago/webhook`;
   const gateway = options.gateway ?? createMercadoPagoPreferenceGateway();
   const preference = await gateway.createPreference({
     orderId: order.orderId,
@@ -36,6 +37,7 @@ export async function createCheckoutPreference(
       failure: `${siteUrl}/payment/failure?order_id=${order.orderId}`,
       pending: `${siteUrl}/payment/pending?order_id=${order.orderId}`,
     },
+    notificationUrl,
   });
 
   await repository.setOrderPreference?.({ orderId: order.orderId, preferenceId: preference.preferenceId });

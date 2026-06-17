@@ -1,8 +1,26 @@
 import { NextResponse } from "next/server";
 import { getPaymentReturnOrder } from "@/server/orders/payment-return";
+import { createDefaultRateLimiter, getClientIpFromHeaders, PAYMENT_RETURN_RATE_LIMIT } from "@/server/security/rate-limit";
+
+const paymentReturnRateLimiter = createDefaultRateLimiter();
 
 export async function GET(request: Request) {
   try {
+    const rateLimit = await paymentReturnRateLimiter.consume({
+      ...PAYMENT_RETURN_RATE_LIMIT,
+      identity: getClientIpFromHeaders(request.headers),
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: "Demasiados intentos. Probá de nuevo en unos minutos." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(Math.max(1, rateLimit.retryAfterSeconds)) },
+        },
+      );
+    }
+
     const orderId = new URL(request.url).searchParams.get("order_id");
 
     if (!orderId) {
@@ -16,8 +34,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json(order, { headers: { "Cache-Control": "no-store" } });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "No pudimos verificar el estado de la orden";
-    return NextResponse.json({ error: message }, { status: 400 });
+  } catch {
+    return NextResponse.json({ error: "No pudimos verificar el estado de la orden" }, { status: 400 });
   }
 }
