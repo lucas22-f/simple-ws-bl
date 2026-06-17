@@ -55,7 +55,7 @@ describe("AdminOrdersForm", () => {
   it("renders a search input with the current query", () => {
     const html = renderToStaticMarkup(createElement(AdminOrdersForm, { orders, action, archiveAction, searchQuery: "ada" }));
 
-    expect(html).toContain('placeholder="Buscar por ID de orden o nombre del cliente"');
+    expect(html).toContain('placeholder="Buscar por nombre o email del cliente"');
     expect(html).toMatch(/(?:defaultValue|value)="ada"/);
   });
 

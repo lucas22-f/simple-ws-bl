@@ -146,7 +146,7 @@ export function AdminOrdersForm({ action, archiveAction, orders, pagination, sea
         initialQuery={searchQuery}
         id="admin-orders-search"
         label="Buscar órdenes"
-        placeholder="Buscar por ID de orden o nombre del cliente"
+        placeholder="Buscar por nombre o email del cliente"
       />
 
       <section className="flex flex-col gap-4">
