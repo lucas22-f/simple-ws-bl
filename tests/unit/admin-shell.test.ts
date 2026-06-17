@@ -24,4 +24,17 @@ describe("AdminShell", () => {
     expect(html).toContain('type="submit"');
     expect(html).toContain('aria-label="Cerrar sesión de administración"');
   });
+
+  it("includes navigation link to approvals", () => {
+    const shellProps = {
+      title: "Aprobaciones",
+      description: "Gestion de nuevos administradores.",
+      children: createElement("section", null, "Contenido"),
+    };
+
+    const html = renderToStaticMarkup(createElement(AdminShell, shellProps));
+
+    expect(html).toContain("Aprobaciones");
+    expect(html).toContain('href="/admin/approvals"');
+  });
 });
