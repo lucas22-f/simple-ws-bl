@@ -81,7 +81,7 @@ export function createSupabaseAdminOrderQueryClient(): AdminOrderQueryClient {
       const search = normalizeSearch(options.search);
       if (search) {
         const escapedSearch = search.replaceAll("%", "\\%").replaceAll("_", "\\_");
-        query = query.or(`id.ilike.%${escapedSearch}%,buyer_name.ilike.%${escapedSearch}%`);
+        query = query.or(`id::text.ilike.%${escapedSearch}%,buyer_name.ilike.%${escapedSearch}%`);
       }
 
       if (options.pageSize) {
