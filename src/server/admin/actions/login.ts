@@ -11,12 +11,20 @@ type LoginCredentials = {
 };
 
 type LoginResult = {
+  data?: { user?: { id: string } | null };
   error: unknown;
 };
 
 type LoginSupabaseClient = {
   auth: {
     signInWithPassword(credentials: LoginCredentials): Promise<LoginResult>;
+  };
+  from(table: "profiles"): {
+    select(columns: string): {
+      eq(column: string, value: string): {
+        maybeSingle(): Promise<{ data: { admin_status: string | null } | null; error: unknown }>;
+      };
+    };
   };
 };
 
@@ -55,10 +63,25 @@ export async function executeAdminLogin(
 
   const supabase = dependencies.supabase ?? await (dependencies.createClient ?? createSupabaseServerClient)();
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     throw new Error("Credenciales inválidas");
+  }
+
+  const userId = authData?.user?.id;
+  if (!userId) {
+    throw new Error("No pudimos verificar tu usuario");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("admin_status")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (profile?.admin_status === "pending") {
+    throw new Error("Tu cuenta está pendiente de aprobación. Contactá al administrador que te dio las credenciales.");
   }
 
   const redirectTo = resolveAdminLoginNextPath(formData.get("next"));
@@ -78,6 +101,16 @@ export async function loginAction(_previousState: FormActionState, formData: For
   } catch (error) {
     if (error instanceof Error && error.message === "Credenciales inválidas") {
       return actionError("Credenciales inválidas. Revisá el email y la contraseña.", {
+        email: " ",
+        password: " ",
+      });
+    }
+
+    if (
+      error instanceof Error &&
+      error.message === "Tu cuenta está pendiente de aprobación. Contactá al administrador que te dio las credenciales."
+    ) {
+      return actionError(error.message, {
         email: " ",
         password: " ",
       });

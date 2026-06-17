@@ -2,9 +2,7 @@
 
 import { createHash, timingSafeEqual } from "node:crypto";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { actionError, initialFormActionState, type FormActionState } from "@/lib/form-state";
-import { resolveAdminLoginNextPath } from "@/server/admin/actions/login-path";
+import { actionError, actionSuccess, type FormActionState } from "@/lib/form-state";
 import { getAdminRegistrationEnv } from "@/server/env";
 import {
   ADMIN_REGISTRATION_EMAIL_RATE_LIMIT,
@@ -15,7 +13,6 @@ import {
   type RateLimiter,
 } from "@/server/security/rate-limit";
 import { createSupabaseAdminClient } from "@/server/supabase/admin";
-import { createSupabaseServerClient } from "@/server/supabase/server";
 
 const ADMIN_REGISTRATION_FAILURE = "No pudimos crear la cuenta de administrador";
 
@@ -44,25 +41,17 @@ export type AdminRegistrationAdminClient = {
   };
   from(table: "profiles"): {
     upsert(
-      value: { id: string; role: "admin" },
+      value: { id: string; role: "admin"; admin_status: "pending" },
       options: { onConflict: "id" },
     ): Promise<RegistrationResult<unknown>>;
   };
 };
 
-export type AdminRegistrationAuthClient = {
-  auth: {
-    signInWithPassword(credentials: RegistrationCredentials): Promise<RegistrationResult<unknown>>;
-  };
-};
-
 export type AdminRegistrationDependencies = {
   adminClient?: AdminRegistrationAdminClient;
-  authClient?: AdminRegistrationAuthClient;
   getSecret?: () => string;
   rateLimiter?: RateLimiter;
   clientIp?: string;
-  redirect?: (path: string) => never;
 };
 
 function hashSecret(value: string) {
@@ -155,22 +144,11 @@ export async function executeAdminRegistration(
 
   const { error: profileError } = await adminClient
     .from("profiles")
-    .upsert({ id: createdUser.id, role: "admin" }, { onConflict: "id" });
+    .upsert({ id: createdUser.id, role: "admin", admin_status: "pending" }, { onConflict: "id" });
 
   if (profileError) {
     throw new Error(ADMIN_REGISTRATION_FAILURE);
   }
-
-  const authClient = dependencies.authClient ?? await createSupabaseServerClient();
-  const { error: signInError } = await authClient.auth.signInWithPassword({ email, password });
-
-  if (signInError) {
-    throw new Error(ADMIN_REGISTRATION_FAILURE);
-  }
-
-  const redirectTo = resolveAdminLoginNextPath(formData.get("next"));
-  const redirectUser = dependencies.redirect ?? redirect;
-  redirectUser(redirectTo);
 }
 
 export async function registerAdminAction(
@@ -185,7 +163,7 @@ export async function registerAdminAction(
 
   try {
     await executeAdminRegistration(formData, dependencies);
-    return initialFormActionState;
+    return actionSuccess("Tu cuenta fue creada. Esperá la aprobación de un administrador.");
   } catch (error) {
     if (error instanceof Error && error.message === ADMIN_REGISTRATION_FAILURE) {
       return actionError("No pudimos crear la cuenta de administrador. Revisá los datos e intentá nuevamente.", {

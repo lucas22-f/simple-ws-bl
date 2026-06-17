@@ -1,21 +1,15 @@
 ﻿import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
-vi.mock("next/navigation", () => ({
-  redirect: vi.fn((path: string): never => {
-    throw new Error(`redirect:${path}`);
-  }),
-}));
 
 import { executeAdminRegistration, registerAdminAction } from "@/server/admin/actions/register";
 import type { RateLimiter } from "@/server/security/rate-limit";
 
-function buildRegistrationForm(input: { email?: string; password?: string; secret?: string; next?: string }) {
+function buildRegistrationForm(input: { email?: string; password?: string; secret?: string }) {
   const formData = new FormData();
   if (input.email !== undefined) formData.set("email", input.email);
   if (input.password !== undefined) formData.set("password", input.password);
   if (input.secret !== undefined) formData.set("secret", input.secret);
-  if (input.next !== undefined) formData.set("next", input.next);
   return formData;
 }
 
@@ -25,17 +19,14 @@ function createRegistrationClients(options: { createUserError?: Error | null } =
     error: options.createUserError ?? null,
   }));
   const upsert = vi.fn(async () => ({ error: null }));
-  const signInWithPassword = vi.fn(async () => ({ error: null }));
 
   return {
     adminClient: {
       auth: { admin: { createUser } },
       from: vi.fn(() => ({ upsert })),
     },
-    authClient: { auth: { signInWithPassword } },
     createUser,
     upsert,
-    signInWithPassword,
   };
 }
 
@@ -51,25 +42,19 @@ function createAllowingRateLimiter(): RateLimiter {
 }
 
 describe("admin registration action", () => {
-  it("creates a confirmed auth user, promotes its profile to admin, signs in, and redirects safely", async () => {
+  it("creates a confirmed auth user, promotes its profile to admin (pending), and returns success", async () => {
     const clients = createRegistrationClients();
-    const redirectTo = vi.fn((path: string): never => {
-      throw new Error(`redirect:${path}`);
-    });
 
     await expect(executeAdminRegistration(buildRegistrationForm({
       email: " owner@example.com ",
       password: "secure-password",
       secret: "owner-secret",
-      next: "/admin/products",
     }), {
       getSecret: () => "owner-secret",
       adminClient: clients.adminClient,
-      authClient: clients.authClient,
       rateLimiter: createAllowingRateLimiter(),
       clientIp: "203.0.113.10",
-      redirect: redirectTo,
-    })).rejects.toThrow("redirect:/admin/products");
+    })).resolves.toBeUndefined();
 
     expect(clients.createUser).toHaveBeenCalledWith({
       email: "owner@example.com",
@@ -77,35 +62,10 @@ describe("admin registration action", () => {
       email_confirm: true,
     });
     expect(clients.adminClient.from).toHaveBeenCalledWith("profiles");
-    expect(clients.upsert).toHaveBeenCalledWith({ id: "user-123", role: "admin" }, { onConflict: "id" });
-    expect(clients.signInWithPassword).toHaveBeenCalledWith({
-      email: "owner@example.com",
-      password: "secure-password",
-    });
-    expect(redirectTo).toHaveBeenCalledWith("/admin/products");
-  });
-
-  it("falls back to /admin instead of redirecting to external next destinations", async () => {
-    const clients = createRegistrationClients();
-    const redirectTo = vi.fn((path: string): never => {
-      throw new Error(`redirect:${path}`);
-    });
-
-    await expect(executeAdminRegistration(buildRegistrationForm({
-      email: "owner@example.com",
-      password: "secure-password",
-      secret: "owner-secret",
-      next: "https://evil.test/admin",
-    }), {
-      getSecret: () => "owner-secret",
-      adminClient: clients.adminClient,
-      authClient: clients.authClient,
-      rateLimiter: createAllowingRateLimiter(),
-      clientIp: "203.0.113.10",
-      redirect: redirectTo,
-    })).rejects.toThrow("redirect:/admin");
-
-    expect(redirectTo).toHaveBeenCalledWith("/admin");
+    expect(clients.upsert).toHaveBeenCalledWith(
+      { id: "user-123", role: "admin", admin_status: "pending" },
+      { onConflict: "id" },
+    );
   });
 
   it("rejects an invalid owner secret before creating or promoting any user", async () => {
@@ -118,14 +78,12 @@ describe("admin registration action", () => {
     }), {
       getSecret: () => "owner-secret",
       adminClient: clients.adminClient,
-      authClient: clients.authClient,
       rateLimiter: createAllowingRateLimiter(),
       clientIp: "203.0.113.10",
     })).rejects.toThrow("No pudimos crear la cuenta de administrador");
 
     expect(clients.createUser).not.toHaveBeenCalled();
     expect(clients.upsert).not.toHaveBeenCalled();
-    expect(clients.signInWithPassword).not.toHaveBeenCalled();
   });
 
   it("returns the generic failure before secret validation or user creation when the registration limit is exceeded", async () => {
@@ -147,7 +105,6 @@ describe("admin registration action", () => {
     }), {
       getSecret,
       adminClient: clients.adminClient,
-      authClient: clients.authClient,
       rateLimiter,
       clientIp: "203.0.113.10",
     })).rejects.toThrow("No pudimos crear la cuenta de administrador");
@@ -163,7 +120,6 @@ describe("admin registration action", () => {
     expect(getSecret).not.toHaveBeenCalled();
     expect(clients.createUser).not.toHaveBeenCalled();
     expect(clients.upsert).not.toHaveBeenCalled();
-    expect(clients.signInWithPassword).not.toHaveBeenCalled();
   });
 
   it("maps a rate-limited registration action to the generic form error", async () => {
@@ -188,7 +144,6 @@ describe("admin registration action", () => {
       {
         getSecret,
         adminClient: clients.adminClient,
-        authClient: clients.authClient,
         rateLimiter,
         clientIp: "203.0.113.10",
       },
@@ -206,7 +161,7 @@ describe("admin registration action", () => {
     expect(clients.createUser).not.toHaveBeenCalled();
   });
 
-  it("does not promote or sign in when Supabase rejects a duplicate email", async () => {
+  it("does not promote when Supabase rejects a duplicate email", async () => {
     const clients = createRegistrationClients({ createUserError: new Error("User already registered") });
 
     await expect(executeAdminRegistration(buildRegistrationForm({
@@ -216,13 +171,35 @@ describe("admin registration action", () => {
     }), {
       getSecret: () => "owner-secret",
       adminClient: clients.adminClient,
-      authClient: clients.authClient,
       rateLimiter: createAllowingRateLimiter(),
       clientIp: "203.0.113.10",
     })).rejects.toThrow("No pudimos crear la cuenta de administrador");
 
     expect(clients.createUser).toHaveBeenCalledOnce();
     expect(clients.upsert).not.toHaveBeenCalled();
-    expect(clients.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("returns success state instead of redirecting", async () => {
+    const clients = createRegistrationClients();
+
+    const result = await registerAdminAction(
+      { status: "idle" },
+      buildRegistrationForm({
+        email: "owner@example.com",
+        password: "secure-password",
+        secret: "owner-secret",
+      }),
+      {
+        getSecret: () => "owner-secret",
+        adminClient: clients.adminClient,
+        rateLimiter: createAllowingRateLimiter(),
+        clientIp: "203.0.113.10",
+      },
+    );
+
+    expect(result).toEqual({
+      status: "success",
+      message: "Tu cuenta fue creada. Esperá la aprobación de un administrador.",
+    });
   });
 });
